@@ -1,0 +1,14 @@
+<worksheet name='{{ worksheet_name }}'>
+  <table>
+    <view>
+      <datasources>
+        <datasource caption='Extract' name='federated.datasource' />
+      </datasources>
+      <datasource-dependencies datasource='federated.datasource'>
+        <column datatype='datetime' name='[{{ chart.columns[0] }}]' role='dimension' type='ordinal' />
+        <column datatype='real' name='[{{ chart.columns[1] }}]' role='measure' type='quantitative' />
+      </datasource-dependencies>
+      <aggregation value='true' />
+    </view>
+  </table>
+</worksheet>

@@ -1,0 +1,20 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<workbook source-build='2024.1.0' source-platform='win' version='18.1'
+          xmlns:user='http://www.tableausoftware.com/xml/user'>
+  <preferences />
+  <datasources>
+    <datasource caption='Extract' inline='true' name='federated.datasource'>
+      <connection class='hyper' dbname='{{ hyper_filename }}'>
+        <relation name='Extract' table='[Extract].[Extract]' type='table' />
+      </connection>
+      {% for col in columns %}
+      <column datatype='{{ col.datatype }}' name='[{{ col.name }}]' role='{{ col.role }}' type='{{ col.field_type }}' />
+      {% endfor %}
+    </datasource>
+  </datasources>
+  <worksheets>
+    {% for ws in worksheets %}
+    {{ ws }}
+    {% endfor %}
+  </worksheets>
+</workbook>

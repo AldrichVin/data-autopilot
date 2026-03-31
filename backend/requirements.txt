@@ -1,0 +1,16 @@
+fastapi>=0.115.0
+uvicorn[standard]>=0.34.0
+python-multipart>=0.0.18
+pandas>=2.2.0
+numpy>=2.1.0
+altair>=5.5.0
+matplotlib>=3.10.0
+pantab>=5.2.0
+jinja2>=3.1.0
+scipy>=1.14.0
+fuzzywuzzy[speedup]>=0.18.0
+python-dateutil>=2.9.0
+pydantic>=2.10.0
+pydantic-settings>=2.7.0
+pytest>=8.3.0
+httpx>=0.28.0

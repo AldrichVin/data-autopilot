@@ -1,0 +1,15 @@
+<worksheet name='{{ worksheet_name }}'>
+  <table>
+    <view>
+      <datasources>
+        <datasource caption='Extract' name='federated.datasource' />
+      </datasources>
+      <datasource-dependencies datasource='federated.datasource'>
+        {% for col_name in chart.columns %}
+        <column datatype='string' name='[{{ col_name }}]' role='dimension' type='nominal' />
+        {% endfor %}
+      </datasource-dependencies>
+      <aggregation value='true' />
+    </view>
+  </table>
+</worksheet>
