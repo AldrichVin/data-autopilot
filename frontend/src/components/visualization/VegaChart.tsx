@@ -1,10 +1,13 @@
-import { VegaLite } from "react-vega";
+import { useRef, useEffect } from "react";
+import vegaEmbed from "vega-embed";
 
 interface VegaChartProps {
   spec: Record<string, unknown>;
 }
 
 export default function VegaChart({ spec }: VegaChartProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+
   const themedSpec = {
     ...spec,
     background: "transparent",
@@ -21,9 +24,16 @@ export default function VegaChart({ spec }: VegaChartProps) {
     },
   };
 
-  return (
-    <div className="overflow-x-auto">
-      <VegaLite spec={themedSpec as never} actions={false} />
-    </div>
-  );
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const result = vegaEmbed(containerRef.current, themedSpec as never, {
+      actions: false,
+      renderer: "svg",
+    });
+    return () => {
+      result.then((r) => r.finalize()).catch(() => {});
+    };
+  }, [spec]);
+
+  return <div ref={containerRef} className="overflow-x-auto" />;
 }
