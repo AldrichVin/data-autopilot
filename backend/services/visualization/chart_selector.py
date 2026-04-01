@@ -20,16 +20,25 @@ def select_charts(
 
     # Rule 1: Histogram for each numeric column (up to 6)
     for col in numeric_cols[:6]:
+        stats_desc = ""
+        if col.stats:
+            stats_desc = (
+                f" (mean: {col.stats.mean:,.2f}, "
+                f"std: {col.stats.std:,.2f})"
+            )
         charts.append(
             ChartRecommendation(
                 chart_type=ChartType.HISTOGRAM,
                 columns=[col.name],
                 title=f"Distribution of {col.name}",
-                description=f"Histogram showing the frequency distribution of {col.name}",
+                description=(
+                    f"Frequency distribution of {col.name}{stats_desc}. "
+                    f"Shows mean and median reference lines."
+                ),
             )
         )
 
-    # Rule 2: Bar chart for each categorical column (≤20 unique, up to 4)
+    # Rule 2: Bar chart for each categorical column (<=20 unique, up to 4)
     for col in categorical_cols[:4]:
         if col.unique_count <= 20:
             charts.append(
@@ -37,7 +46,10 @@ def select_charts(
                     chart_type=ChartType.BAR,
                     columns=[col.name],
                     title=f"Counts by {col.name}",
-                    description=f"Bar chart showing value counts for {col.name}",
+                    description=(
+                        f"Value counts for {col.name} "
+                        f"({col.unique_count} unique categories)"
+                    ),
                 )
             )
 
@@ -47,12 +59,17 @@ def select_charts(
             [c.name for c in numeric_cols], df
         )
         for col_a, col_b, corr in pairs[:3]:
+            strength = "strong" if abs(corr) >= 0.7 else "moderate" if abs(corr) >= 0.4 else "weak"
+            direction = "positive" if corr > 0 else "negative"
             charts.append(
                 ChartRecommendation(
                     chart_type=ChartType.SCATTER,
                     columns=[col_a, col_b],
                     title=f"{col_a} vs {col_b} (r={corr:.2f})",
-                    description=f"Scatter plot showing relationship between {col_a} and {col_b} (correlation: {corr:.2f})",
+                    description=(
+                        f"Scatter plot with trend line showing {strength} "
+                        f"{direction} relationship between {col_a} and {col_b}"
+                    ),
                 )
             )
 
@@ -65,11 +82,14 @@ def select_charts(
                     chart_type=ChartType.LINE,
                     columns=[dt_col.name, num_col.name],
                     title=f"{num_col.name} over time",
-                    description=f"Time series of {num_col.name} over {dt_col.name}",
+                    description=(
+                        f"Time series of {num_col.name} plotted against "
+                        f"{dt_col.name} to reveal temporal trends"
+                    ),
                 )
             )
 
-    # Rule 5: Correlation heatmap if ≥3 numeric columns
+    # Rule 5: Correlation heatmap if >= 3 numeric columns
     if len(numeric_cols) >= 3:
         heatmap_cols = [c.name for c in numeric_cols[:10]]
         charts.append(
@@ -77,7 +97,10 @@ def select_charts(
                 chart_type=ChartType.HEATMAP,
                 columns=heatmap_cols,
                 title="Correlation Heatmap",
-                description="Heatmap showing pairwise correlations between numeric columns",
+                description=(
+                    f"Pairwise Pearson correlations between "
+                    f"{len(heatmap_cols)} numeric columns"
+                ),
             )
         )
 
@@ -91,7 +114,10 @@ def select_charts(
                     chart_type=ChartType.GROUPED_BAR,
                     columns=[cat.name, num.name],
                     title=f"Average {num.name} by {cat.name}",
-                    description=f"Bar chart showing average {num.name} grouped by {cat.name}",
+                    description=(
+                        f"Average {num.name} grouped by {cat.name} "
+                        f"({cat.unique_count} categories)"
+                    ),
                 )
             )
 
