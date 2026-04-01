@@ -125,6 +125,39 @@ class StatusResponse(BaseModel):
     error: Optional[str] = None
 
 
+# --- Report ---
+
+
+class Alert(BaseModel):
+    severity: str  # "warning" | "info" | "danger"
+    category: str
+    message: str
+    column: Optional[str] = None
+
+
+class ReportChart(BaseModel):
+    title: str
+    description: str
+    chart_type: ChartType
+    image_base64: str
+
+
+class ReportData(BaseModel):
+    title: str
+    generated_at: str
+    dataset_filename: str
+    profile: DataProfile
+    alerts: list[Alert]
+    cleaning_report: Optional[CleaningReport] = None
+    charts: list[ReportChart]
+    key_findings: list[str]
+
+
+class ReportRequest(BaseModel):
+    session_id: str
+    title: str = "Data Analysis Report"
+
+
 # --- Internal ---
 
 
