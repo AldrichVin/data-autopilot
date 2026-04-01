@@ -36,7 +36,9 @@ async def clean_data(request: CleanRequest):
         cleaned_df, report = engine.clean(df, request.options)
         file_manager.save_cleaned_df(request.session_id, cleaned_df)
         file_manager.update_session(
-            request.session_id, status=SessionStatus.CLEANED
+            request.session_id,
+            status=SessionStatus.CLEANED,
+            cleaning_report=report,
         )
 
         preview = cleaned_df.head(10).fillna("").to_dict(orient="records")
