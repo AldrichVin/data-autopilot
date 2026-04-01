@@ -70,6 +70,31 @@ export interface VisualizeResponse {
   tableau_download_url?: string;
 }
 
+export interface Alert {
+  severity: "warning" | "info" | "danger";
+  category: string;
+  message: string;
+  column?: string;
+}
+
+export interface ReportChart {
+  title: string;
+  description: string;
+  chart_type: string;
+  image_base64: string;
+}
+
+export interface ReportData {
+  title: string;
+  generated_at: string;
+  dataset_filename: string;
+  profile: DataProfile;
+  alerts: Alert[];
+  cleaning_report?: CleaningReport;
+  charts: ReportChart[];
+  key_findings: string[];
+}
+
 export type Engine = "python" | "r";
 export type VizMode = "vegalite" | "matplotlib";
 export type AppStatus =
