@@ -51,6 +51,7 @@ async def get_capabilities():
         "max_upload_size_mb": settings.max_upload_size_mb,
         "engines": ["python"] + (["r"] if R_AVAILABLE else []),
         "viz_formats": ["vegalite", "matplotlib", "tableau"],
+        "export_formats": ["cleaned_csv", "charts", "tableau", "report_html", "report_pdf"],
     }
 
 
