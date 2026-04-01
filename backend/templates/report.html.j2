@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ report.title }}</title>
+<style>
+  :root {
+    --primary: #0088ed;
+    --dark: #1a1a2e;
+    --chrome: #58544f;
+    --bg: #ffffff;
+    --bg-alt: #f8f9fa;
+    --border: #e9ecef;
+    --warning-bg: #fff3cd;
+    --warning-text: #856404;
+    --info-bg: #cce5ff;
+    --info-text: #004085;
+    --danger-bg: #f8d7da;
+    --danger-text: #721c24;
+    --success: #198754;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+    color: var(--chrome);
+    background: var(--bg);
+    line-height: 1.6;
+    font-size: 14px;
+  }
+
+  .container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  /* Header */
+  .report-header {
+    background: linear-gradient(135deg, var(--dark) 0%, #16213e 100%);
+    color: white;
+    padding: 48px 0 36px;
+    margin-bottom: 32px;
+  }
+  .report-header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .report-header .meta {
+    font-size: 13px;
+    opacity: 0.7;
+  }
+  .report-header .meta span + span { margin-left: 20px; }
+
+  /* Section headings */
+  .section { margin-bottom: 40px; }
+  .section-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--dark);
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--primary);
+    display: inline-block;
+  }
+
+  /* Stat cards */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .stat-card {
+    background: var(--bg-alt);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+  }
+  .stat-card .value {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--dark);
+  }
+  .stat-card .label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 4px;
+    color: var(--chrome);
+  }
+
+  /* Key findings */
+  .findings-list {
+    list-style: none;
+    padding: 0;
+  }
+  .findings-list li {
+    padding: 10px 16px;
+    margin-bottom: 8px;
+    background: var(--bg-alt);
+    border-left: 3px solid var(--primary);
+    border-radius: 0 6px 6px 0;
+    font-size: 14px;
+  }
+
+  /* Alerts */
+  .alert {
+    padding: 12px 16px;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    font-size: 13px;
+    border: 1px solid transparent;
+  }
+  .alert-warning {
+    background: var(--warning-bg);
+    color: var(--warning-text);
+    border-color: #ffc107;
+  }
+  .alert-info {
+    background: var(--info-bg);
+    color: var(--info-text);
+    border-color: #b8daff;
+  }
+  .alert-danger {
+    background: var(--danger-bg);
+    color: var(--danger-text);
+    border-color: #f5c6cb;
+  }
+  .alert-badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-right: 8px;
+  }
+  .alert-warning .alert-badge { background: #ffc107; color: #212529; }
+  .alert-info .alert-badge { background: #0088ed; color: white; }
+  .alert-danger .alert-badge { background: #dc3545; color: white; }
+
+  /* Column profile table */
+  .profile-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .profile-table th {
+    background: var(--dark);
+    color: white;
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .profile-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .profile-table tr:nth-child(even) td {
+    background: var(--bg-alt);
+  }
+  .type-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .type-numeric { background: #dbeafe; color: #1d4ed8; }
+  .type-categorical { background: #fce7f3; color: #be185d; }
+  .type-datetime { background: #d1fae5; color: #065f46; }
+  .type-text { background: #fef3c7; color: #92400e; }
+  .type-boolean { background: #ede9fe; color: #5b21b6; }
+
+  /* Cleaning report */
+  .cleaning-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  .shape-card {
+    background: var(--bg-alt);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+  }
+  .shape-card.after {
+    border-color: var(--success);
+    background: #f0fdf4;
+  }
+  .shape-card .shape-label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--chrome);
+  }
+  .shape-card .shape-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--dark);
+    margin-top: 4px;
+  }
+  .step-list { list-style: none; padding: 0; }
+  .step-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .step-number {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    background: var(--primary);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .step-content { flex: 1; }
+  .step-name {
+    font-weight: 600;
+    color: var(--dark);
+    text-transform: capitalize;
+  }
+  .step-desc { font-size: 13px; color: var(--chrome); }
+  .step-affected {
+    font-size: 12px;
+    color: var(--primary);
+    font-weight: 600;
+    margin-top: 2px;
+  }
+
+  /* Chart grid */
+  .chart-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+  .chart-card {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    background: white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .chart-card img {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+  .chart-card .chart-info {
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+  }
+  .chart-card .chart-title {
+    font-weight: 600;
+    color: var(--dark);
+    font-size: 14px;
+  }
+  .chart-card .chart-desc {
+    font-size: 12px;
+    color: var(--chrome);
+    margin-top: 4px;
+  }
+  .chart-full { grid-column: 1 / -1; }
+
+  /* Footer */
+  .report-footer {
+    margin-top: 48px;
+    padding: 24px 0;
+    border-top: 1px solid var(--border);
+    text-align: center;
+    font-size: 12px;
+    color: #adb5bd;
+  }
+
+  /* Print styles */
+  @media print {
+    body { font-size: 12px; }
+    .report-header { padding: 24px 0 20px; }
+    .section { page-break-inside: avoid; }
+    .chart-card { break-inside: avoid; }
+    .chart-grid { grid-template-columns: 1fr 1fr; gap: 16px; }
+  }
+
+  @media (max-width: 700px) {
+    .chart-grid { grid-template-columns: 1fr; }
+    .cleaning-grid { grid-template-columns: 1fr; }
+    .stat-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="report-header">
+  <div class="container">
+    <h1>{{ report.title }}</h1>
+    <div class="meta">
+      <span>Dataset: {{ report.dataset_filename }}</span>
+      <span>Generated: {{ report.generated_at }}</span>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- 1. Executive Summary -->
+  <div class="section">
+    <div class="section-title">Executive Summary</div>
+
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="value">{{ "{:,}".format(report.profile.total_rows) }}</div>
+        <div class="label">Total Rows</div>
+      </div>
+      <div class="stat-card">
+        <div class="value">{{ report.profile.total_columns }}</div>
+        <div class="label">Columns</div>
+      </div>
+      <div class="stat-card">
+        <div class="value">{{ "{:,}".format(report.profile.duplicate_row_count) }}</div>
+        <div class="label">Duplicates</div>
+      </div>
+      <div class="stat-card">
+        <div class="value">{{ report.alerts | length }}</div>
+        <div class="label">Alerts</div>
+      </div>
+    </div>
+
+    {% if report.key_findings %}
+    <ul class="findings-list">
+      {% for finding in report.key_findings %}
+      <li>{{ finding }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </div>
+
+  <!-- 2. Data Quality Alerts -->
+  {% if report.alerts %}
+  <div class="section">
+    <div class="section-title">Data Quality Alerts</div>
+    {% for alert in report.alerts %}
+    <div class="alert alert-{{ alert.severity }}">
+      <span class="alert-badge">{{ alert.category }}</span>
+      {{ alert.message }}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- 3. Column Profiles -->
+  <div class="section">
+    <div class="section-title">Column Profiles</div>
+    <table class="profile-table">
+      <thead>
+        <tr>
+          <th>Column</th>
+          <th>Type</th>
+          <th>Nulls</th>
+          <th>Null %</th>
+          <th>Unique</th>
+          <th>Sample Values</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for col in report.profile.columns %}
+        <tr>
+          <td><strong>{{ col.name }}</strong></td>
+          <td><span class="type-badge type-{{ col.inferred_type }}">{{ col.inferred_type }}</span></td>
+          <td>{{ "{:,}".format(col.null_count) }}</td>
+          <td>{{ "%.1f"|format(col.null_pct) }}%</td>
+          <td>{{ "{:,}".format(col.unique_count) }}</td>
+          <td style="font-size: 12px;">{{ col.sample_values[:3] | join(", ") }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 4. Cleaning Summary -->
+  {% if report.cleaning_report %}
+  <div class="section">
+    <div class="section-title">Cleaning Summary</div>
+
+    <div class="cleaning-grid">
+      <div class="shape-card">
+        <div class="shape-label">Before</div>
+        <div class="shape-value">
+          {{ "{:,}".format(report.cleaning_report.original_shape[0]) }} rows &times;
+          {{ report.cleaning_report.original_shape[1] }} cols
+        </div>
+      </div>
+      <div class="shape-card after">
+        <div class="shape-label">After</div>
+        <div class="shape-value">
+          {{ "{:,}".format(report.cleaning_report.cleaned_shape[0]) }} rows &times;
+          {{ report.cleaning_report.cleaned_shape[1] }} cols
+        </div>
+      </div>
+    </div>
+
+    <ol class="step-list">
+      {% for step in report.cleaning_report.steps %}
+      <li class="step-item">
+        <div class="step-number">{{ loop.index }}</div>
+        <div class="step-content">
+          <div class="step-name">{{ step.step | replace("_", " ") }}</div>
+          <div class="step-desc">{{ step.description }}</div>
+          {% if step.rows_affected > 0 %}
+          <div class="step-affected">{{ "{:,}".format(step.rows_affected) }} rows affected</div>
+          {% endif %}
+        </div>
+      </li>
+      {% endfor %}
+    </ol>
+
+    <p style="font-size: 12px; color: #adb5bd; margin-top: 12px;">
+      Completed in {{ "{:,}".format(report.cleaning_report.duration_ms) }}ms
+    </p>
+  </div>
+  {% endif %}
+
+  <!-- 5. Visualizations -->
+  {% if report.charts %}
+  <div class="section">
+    <div class="section-title">Visualizations</div>
+    <div class="chart-grid">
+      {% for chart in report.charts %}
+      <div class="chart-card{% if chart.chart_type == 'heatmap' %} chart-full{% endif %}">
+        <img src="data:image/png;base64,{{ chart.image_base64 }}" alt="{{ chart.title }}">
+        <div class="chart-info">
+          <div class="chart-title">{{ chart.title }}</div>
+          <div class="chart-desc">{{ chart.description }}</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+
+<!-- Footer -->
+<div class="report-footer">
+  <div class="container">
+    Generated by <strong>Data Autopilot</strong> &mdash; Automated Data Analysis Platform
+  </div>
+</div>
+
+</body>
+</html>
