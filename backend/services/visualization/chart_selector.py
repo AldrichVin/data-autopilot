@@ -12,9 +12,9 @@ import numpy as np
 import pandas as pd
 
 from models.enums import ChartType, ColumnType
-from models.schemas import ChartRecommendation, DataProfile
+from models.schemas import ChartRecommendation, DataProfile, StatisticalReport
 
-MAX_CHARTS = 12
+MAX_CHARTS = 16
 
 
 # ---------------------------------------------------------------------------
@@ -22,7 +22,9 @@ MAX_CHARTS = 12
 # ---------------------------------------------------------------------------
 
 def select_charts(
-    profile: DataProfile, df: pd.DataFrame
+    profile: DataProfile,
+    df: pd.DataFrame,
+    stat_report: StatisticalReport | None = None,
 ) -> list[ChartRecommendation]:
     numeric_cols = [c for c in profile.columns if c.inferred_type == ColumnType.NUMERIC]
     categorical_cols = [c for c in profile.columns if c.inferred_type == ColumnType.CATEGORICAL]
@@ -30,6 +32,7 @@ def select_charts(
 
     candidates: list[ChartRecommendation] = []
 
+    # Basic chart types
     candidates.extend(_candidate_histograms(numeric_cols, df))
     candidates.extend(_candidate_bars(categorical_cols, df, profile.total_rows))
     candidates.extend(_candidate_scatters(numeric_cols, df))
@@ -38,6 +41,21 @@ def select_charts(
     candidates.extend(_candidate_box_plots(numeric_cols, categorical_cols, df))
     candidates.extend(_candidate_grouped_bars(categorical_cols, numeric_cols, df, profile.total_rows))
     candidates.extend(_candidate_missing_matrix(profile, df))
+
+    # Complex Plotly chart types
+    candidates.extend(_candidate_treemap(categorical_cols, numeric_cols, df))
+    candidates.extend(_candidate_sunburst(categorical_cols, numeric_cols, df))
+    candidates.extend(_candidate_sankey(categorical_cols, df))
+    candidates.extend(_candidate_bubble(numeric_cols, df))
+    candidates.extend(_candidate_parallel_coords(numeric_cols, df))
+    candidates.extend(_candidate_radar(numeric_cols, df))
+    candidates.extend(_candidate_waterfall(categorical_cols, numeric_cols, df))
+
+    # Statistical chart types
+    if stat_report:
+        candidates.extend(_candidate_statistical_charts(
+            stat_report, numeric_cols, df,
+        ))
 
     # Filter and rank
     interesting = [c for c in candidates if c.interestingness > 0]
@@ -353,3 +371,284 @@ def _candidate_missing_matrix(
             f"Clustered patterns may indicate systematic data collection issues."
         ),
     )]
+
+
+# ---------------------------------------------------------------------------
+# Complex Plotly chart candidates
+# ---------------------------------------------------------------------------
+
+def _detect_hierarchy(
+    df: pd.DataFrame, cat_cols: list,
+) -> list[tuple[str, str]]:
+    """Detect parent-child categorical hierarchies (parent cardinality < child by 3:1+)."""
+    hierarchies = []
+    for i, parent in enumerate(cat_cols):
+        for child in cat_cols[i + 1:]:
+            parent_card = df[parent.name].nunique()
+            child_card = df[child.name].nunique()
+            if child_card >= parent_card * 2 and parent_card >= 2:
+                hierarchies.append((parent.name, child.name))
+            elif parent_card >= child_card * 2 and child_card >= 2:
+                hierarchies.append((child.name, parent.name))
+    return hierarchies
+
+
+def _candidate_treemap(
+    categorical_cols: list, numeric_cols: list, df: pd.DataFrame,
+) -> list[ChartRecommendation]:
+    if len(categorical_cols) < 2:
+        return []
+
+    hierarchies = _detect_hierarchy(df, categorical_cols)
+    if not hierarchies:
+        return []
+
+    parent, child = hierarchies[0]
+    cols = [parent, child]
+    if numeric_cols:
+        cols.append(numeric_cols[0].name)
+
+    return [ChartRecommendation(
+        chart_type=ChartType.TREEMAP,
+        columns=cols,
+        title=f"Treemap: {child} within {parent}",
+        description=f"Hierarchical breakdown of {child} grouped by {parent}",
+        interestingness=0.8,
+        annotation=f"Treemap reveals the hierarchical relationship between {parent} and {child}.",
+    )]
+
+
+def _candidate_sunburst(
+    categorical_cols: list, numeric_cols: list, df: pd.DataFrame,
+) -> list[ChartRecommendation]:
+    if len(categorical_cols) < 3:
+        return []
+
+    hierarchies = _detect_hierarchy(df, categorical_cols)
+    if not hierarchies:
+        return []
+
+    # Use first 3 categorical columns for deeper nesting
+    cols = [c.name for c in categorical_cols[:3]]
+    if numeric_cols:
+        cols.append(numeric_cols[0].name)
+
+    return [ChartRecommendation(
+        chart_type=ChartType.SUNBURST,
+        columns=cols,
+        title=f"Sunburst: {' > '.join(cols[:3])}",
+        description=f"Nested categorical breakdown across {len(cols) - (1 if numeric_cols else 0)} levels",
+        interestingness=0.85,
+        annotation="Sunburst chart shows nested hierarchical structure across multiple categorical dimensions.",
+    )]
+
+
+def _candidate_sankey(
+    categorical_cols: list, df: pd.DataFrame,
+) -> list[ChartRecommendation]:
+    if len(categorical_cols) < 2:
+        return []
+
+    for i, col_a in enumerate(categorical_cols[:4]):
+        for col_b in categorical_cols[i + 1:4]:
+            if col_a.unique_count < 2 or col_b.unique_count < 2:
+                continue
+            if col_a.unique_count > 15 or col_b.unique_count > 15:
+                continue
+
+            cross = pd.crosstab(df[col_a.name], df[col_b.name])
+            n_flows = (cross > 0).sum().sum()
+            if n_flows < 5:
+                continue
+
+            entropy_a = _compute_entropy(df[col_a.name].dropna())
+            entropy_b = _compute_entropy(df[col_b.name].dropna())
+
+            if entropy_a < 0.4 or entropy_b < 0.4:
+                continue
+
+            return [ChartRecommendation(
+                chart_type=ChartType.SANKEY,
+                columns=[col_a.name, col_b.name],
+                title=f"Flow: {col_a.name} → {col_b.name}",
+                description=f"Flow diagram showing {n_flows} connections between categories",
+                interestingness=0.9,
+                annotation=f"Sankey diagram reveals {n_flows} distinct flow paths from {col_a.name} to {col_b.name}.",
+            )]
+    return []
+
+
+def _candidate_bubble(
+    numeric_cols: list, df: pd.DataFrame,
+) -> list[ChartRecommendation]:
+    if len(numeric_cols) < 3:
+        return []
+
+    pairs = _rank_pairs_by_correlation([c.name for c in numeric_cols], df)
+    if not pairs or abs(pairs[0][2]) < 0.3:
+        return []
+
+    col_a, col_b, corr = pairs[0]
+    # Pick 3rd column with most variance (not in the pair)
+    remaining = [c for c in numeric_cols if c.name not in (col_a, col_b)]
+    if not remaining:
+        return []
+
+    size_col = max(remaining, key=lambda c: c.stats.std if c.stats else 0)
+
+    return [ChartRecommendation(
+        chart_type=ChartType.BUBBLE,
+        columns=[col_a, col_b, size_col.name],
+        title=f"{col_a} vs {col_b} (sized by {size_col.name})",
+        description=f"Bubble chart with size encoding on {size_col.name}",
+        interestingness=abs(corr) + 0.2,
+        annotation=(
+            f"Bubble chart extends the scatter relationship (r={corr:.2f}) "
+            f"with {size_col.name} encoded as bubble size."
+        ),
+    )]
+
+
+def _candidate_parallel_coords(
+    numeric_cols: list, df: pd.DataFrame,
+) -> list[ChartRecommendation]:
+    if len(numeric_cols) < 4:
+        return []
+
+    col_names = [c.name for c in numeric_cols[:8]]
+    pairs = _rank_pairs_by_correlation(col_names, df)
+    has_strong = any(abs(c) > 0.5 for _, _, c in pairs)
+
+    if not has_strong:
+        return []
+
+    return [ChartRecommendation(
+        chart_type=ChartType.PARALLEL_COORDS,
+        columns=col_names,
+        title="Parallel Coordinates Overview",
+        description=f"Multivariate view across {len(col_names)} numeric dimensions",
+        interestingness=0.7,
+        annotation=(
+            f"Parallel coordinates plot reveals multivariate patterns across "
+            f"{len(col_names)} variables. Crossing lines indicate inverse relationships."
+        ),
+    )]
+
+
+def _candidate_radar(
+    numeric_cols: list, df: pd.DataFrame,
+) -> list[ChartRecommendation]:
+    if len(numeric_cols) < 3 or len(numeric_cols) > 8:
+        return []
+
+    col_names = [c.name for c in numeric_cols]
+    numeric_df = df[col_names].apply(pd.to_numeric, errors="coerce").dropna()
+    if len(numeric_df) < 5:
+        return []
+
+    means = numeric_df.mean()
+    # Check comparable scales: all positive and CV of means > 0.3
+    if (means <= 0).any():
+        return []
+
+    cv = float(means.std() / means.mean()) if means.mean() != 0 else 0
+    if cv < 0.3:
+        return []
+
+    return [ChartRecommendation(
+        chart_type=ChartType.RADAR,
+        columns=col_names,
+        title="Multi-Metric Radar Profile",
+        description=f"Comparative profile across {len(col_names)} normalized metrics",
+        interestingness=0.75,
+        annotation="Radar chart shows the normalized mean of each metric, revealing the dataset's characteristic profile.",
+    )]
+
+
+def _candidate_waterfall(
+    categorical_cols: list, numeric_cols: list, df: pd.DataFrame,
+) -> list[ChartRecommendation]:
+    if not categorical_cols or not numeric_cols:
+        return []
+
+    for cat in categorical_cols[:3]:
+        if cat.unique_count < 3 or cat.unique_count > 15:
+            continue
+        for num in numeric_cols[:2]:
+            grouped = df.groupby(cat.name)[num.name].sum()
+            if len(grouped) < 3:
+                continue
+
+            # Waterfall is interesting when values have mixed signs or clear ranking
+            has_negative = (grouped < 0).any()
+            range_ratio = (grouped.max() - grouped.min()) / abs(grouped.mean()) if grouped.mean() != 0 else 0
+
+            if not has_negative and range_ratio < 0.5:
+                continue
+
+            return [ChartRecommendation(
+                chart_type=ChartType.WATERFALL,
+                columns=[cat.name, num.name],
+                title=f"Waterfall: {num.name} by {cat.name}",
+                description=f"Cumulative contribution of each {cat.name} to total {num.name}",
+                interestingness=0.8,
+                annotation=f"Waterfall chart shows how each {cat.name} contributes to the total {num.name}.",
+            )]
+    return []
+
+
+# ---------------------------------------------------------------------------
+# Statistical chart candidates
+# ---------------------------------------------------------------------------
+
+def _candidate_statistical_charts(
+    stat_report: StatisticalReport,
+    numeric_cols: list,
+    df: pd.DataFrame,
+) -> list[ChartRecommendation]:
+    results: list[ChartRecommendation] = []
+    col_names = [c.name for c in numeric_cols]
+
+    if stat_report.pca and len(col_names) >= 4:
+        ev = stat_report.pca.explained_variance
+        total_2d = sum(ev[:2]) if len(ev) >= 2 else 0
+        results.append(ChartRecommendation(
+            chart_type=ChartType.PCA_BIPLOT,
+            columns=col_names,
+            title="PCA Biplot",
+            description=f"First 2 principal components explain {total_2d:.1%} of variance",
+            interestingness=0.85,
+            annotation=(
+                f"PCA reduces {len(col_names)} dimensions to 2 components capturing "
+                f"{total_2d:.1%} of total variance. Arrows show original variable loadings."
+            ),
+        ))
+
+    if stat_report.clusters and len(col_names) >= 3:
+        k = stat_report.clusters.optimal_k
+        sil = stat_report.clusters.silhouette_score
+        results.append(ChartRecommendation(
+            chart_type=ChartType.CLUSTER_SCATTER,
+            columns=col_names,
+            title=f"Cluster Analysis ({k} clusters)",
+            description=f"K-means clustering projected to 2D via PCA (silhouette: {sil:.2f})",
+            interestingness=0.9,
+            annotation=f"{k} clusters detected with silhouette score {sil:.2f}. Points colored by cluster membership.",
+        ))
+
+    if stat_report.anomalies and len(col_names) >= 2:
+        n = stat_report.anomalies.n_anomalies
+        pct = stat_report.anomalies.anomaly_pct
+        results.append(ChartRecommendation(
+            chart_type=ChartType.ANOMALY_SCATTER,
+            columns=col_names,
+            title=f"Anomaly Detection ({n} anomalies)",
+            description=f"Isolation Forest detected {n} anomalous records ({pct}%)",
+            interestingness=0.85,
+            annotation=(
+                f"{n} anomalous records ({pct}%) identified via Isolation Forest. "
+                f"Red markers show outlier points in PCA-projected space."
+            ),
+        ))
+
+    return results
