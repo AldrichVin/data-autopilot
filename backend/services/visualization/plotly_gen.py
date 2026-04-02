@@ -54,18 +54,31 @@ def generate_plotly_base64(
     rec: ChartRecommendation, df: pd.DataFrame,
 ) -> str:
     """Return base64 PNG for report embedding."""
+    import time
+
     generator = _GENERATORS.get(rec.chart_type)
     if not generator:
         return ""
     fig = generator(rec, df)
-    try:
-        img_bytes = fig.to_image(format="png", width=800, height=550, scale=2)
-    except Exception:
-        # Fallback: render to HTML and note limitation
-        buf = io.BytesIO()
-        fig.write_image(buf, format="png", width=800, height=550, scale=2)
-        buf.seek(0)
-        img_bytes = buf.read()
+
+    width, height = 900, 650
+
+    def _export() -> bytes:
+        try:
+            return fig.to_image(format="png", width=width, height=height, scale=2)
+        except Exception:
+            buf = io.BytesIO()
+            fig.write_image(buf, format="png", width=width, height=height, scale=2)
+            buf.seek(0)
+            return buf.read()
+
+    img_bytes = _export()
+
+    # Validate the image isn't blank (Kaleido can silently fail on Windows)
+    if len(img_bytes) < 1000:
+        time.sleep(0.5)
+        img_bytes = _export()
+
     return base64.b64encode(img_bytes).decode("utf-8")
 
 
