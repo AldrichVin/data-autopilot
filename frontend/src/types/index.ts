@@ -61,6 +61,7 @@ export interface ChartSpec {
   columns_used: string[];
   vegalite_spec?: Record<string, unknown>;
   matplotlib_url?: string;
+  plotly_spec?: Record<string, unknown>;
   description: string;
 }
 

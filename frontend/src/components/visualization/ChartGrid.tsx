@@ -1,6 +1,9 @@
+import { lazy, Suspense } from "react";
 import type { ChartSpec, VizMode } from "../../types";
 import StaticChart from "./StaticChart";
 import VegaChart from "./VegaChart";
+
+const PlotlyChart = lazy(() => import("./PlotlyChart"));
 
 interface ChartGridProps {
   charts: ChartSpec[];
@@ -21,7 +24,17 @@ export default function ChartGrid({ charts, mode, sessionId }: ChartGridProps) {
           </h3>
           <p className="mb-3 text-xs text-neutral-500">{chart.description}</p>
 
-          {mode === "vegalite" && chart.vegalite_spec ? (
+          {chart.plotly_spec ? (
+            <Suspense
+              fallback={
+                <div className="flex h-48 items-center justify-center text-neutral-500">
+                  Loading chart...
+                </div>
+              }
+            >
+              <PlotlyChart spec={chart.plotly_spec} />
+            </Suspense>
+          ) : mode === "vegalite" && chart.vegalite_spec ? (
             <VegaChart spec={chart.vegalite_spec} />
           ) : chart.matplotlib_url ? (
             <StaticChart url={chart.matplotlib_url} alt={chart.title} />

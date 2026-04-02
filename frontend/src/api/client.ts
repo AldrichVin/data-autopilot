@@ -30,7 +30,7 @@ export async function cleanData(
 
 export async function visualize(
   sessionId: string,
-  formats: string[] = ["vegalite", "matplotlib", "tableau"]
+  formats: string[] = ["vegalite", "matplotlib", "plotly", "tableau"]
 ): Promise<VisualizeResponse> {
   const { data } = await api.post<VisualizeResponse>("/api/v1/visualize", {
     session_id: sessionId,
