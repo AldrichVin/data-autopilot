@@ -413,6 +413,21 @@
   }
   .chart-full { grid-column: 1 / -1; }
 
+  /* ── Reading guide ── */
+  .chart-guide {
+    font-size: var(--text-xs);
+    color: var(--text-secondary);
+    background: var(--bg-tertiary);
+    padding: 6px 10px;
+    margin-top: 4px;
+    line-height: 1.5;
+    border-radius: 3px;
+  }
+  .chart-guide-label {
+    font-weight: 600;
+    color: var(--text-tertiary);
+  }
+
   /* ── Footer ── */
   .report-footer {
     margin-top: var(--space-3xl);
@@ -723,6 +738,11 @@
         <figcaption class="chart-info">
           <div class="chart-title">{{ chart.title }}</div>
           <div class="chart-desc">{{ chart.description }}</div>
+          {% if chart.reading_guide %}
+          <div class="chart-guide">
+            <span class="chart-guide-label">How to read:</span> {{ chart.reading_guide }}
+          </div>
+          {% endif %}
           {% if chart.annotation %}
           <div class="chart-annotation">{{ chart.annotation }}</div>
           {% endif %}

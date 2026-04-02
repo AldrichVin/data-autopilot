@@ -131,6 +131,7 @@ def build_report(
             chart_type=rec.chart_type,
             image_base64=image_b64,
             annotation=rec.annotation,
+            reading_guide=rec.reading_guide,
         ))
 
     # Group charts into thematic sections
