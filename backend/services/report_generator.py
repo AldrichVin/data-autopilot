@@ -16,6 +16,7 @@ from models.schemas import (
     ReportChart,
     ReportData,
     ReportSection,
+    StatisticalReport,
 )
 from services import file_manager
 from services.insights import (
@@ -24,10 +25,13 @@ from services.insights import (
     generate_data_overview_narrative,
     generate_executive_narrative,
     generate_section_narrative,
+    generate_statistical_findings,
 )
 from services.profiler import profile_dataframe
+from services.statistics import run_statistical_analysis
 from services.visualization.chart_selector import select_charts
 from services.visualization.matplotlib_gen import generate_matplotlib_base64
+from services.visualization.plotly_gen import generate_plotly_base64
 
 _TEMPLATE_DIR = Path(__file__).resolve().parent.parent / "templates"
 _jinja_env = Environment(
@@ -53,10 +57,20 @@ _SECTION_MAP = {
     ChartType.VIOLIN: "distributions",
     ChartType.BAR: "distributions",
     ChartType.GROUPED_BAR: "distributions",
+    ChartType.TREEMAP: "distributions",
+    ChartType.SUNBURST: "distributions",
+    ChartType.RADAR: "distributions",
+    ChartType.WATERFALL: "distributions",
     ChartType.SCATTER: "relationships",
     ChartType.HEATMAP: "relationships",
+    ChartType.SANKEY: "relationships",
+    ChartType.BUBBLE: "relationships",
+    ChartType.PARALLEL_COORDS: "relationships",
     ChartType.LINE: "temporal",
     ChartType.MISSING_MATRIX: "data_quality",
+    ChartType.ANOMALY_SCATTER: "data_quality",
+    ChartType.PCA_BIPLOT: "statistical_analysis",
+    ChartType.CLUSTER_SCATTER: "statistical_analysis",
 }
 
 _SECTION_TITLES = {
@@ -64,14 +78,26 @@ _SECTION_TITLES = {
     "relationships": "Relationships",
     "temporal": "Temporal Analysis",
     "data_quality": "Data Quality",
+    "statistical_analysis": "Statistical Analysis",
 }
 
-_SECTION_ORDER = ["distributions", "relationships", "temporal", "data_quality"]
+_SECTION_ORDER = [
+    "distributions", "relationships", "temporal",
+    "statistical_analysis", "data_quality",
+]
 
 
 # ---------------------------------------------------------------------------
 # Report assembly
 # ---------------------------------------------------------------------------
+
+_PLOTLY_CHART_TYPES = {
+    ChartType.TREEMAP, ChartType.SUNBURST, ChartType.SANKEY,
+    ChartType.BUBBLE, ChartType.PARALLEL_COORDS, ChartType.RADAR,
+    ChartType.WATERFALL, ChartType.PCA_BIPLOT, ChartType.CLUSTER_SCATTER,
+    ChartType.ANOMALY_SCATTER,
+}
+
 
 def build_report(
     session_id: str,
@@ -86,11 +112,19 @@ def build_report(
     alerts = generate_alerts(profile, df)
     key_findings = derive_key_findings(profile, alerts, df)
 
+    # Run statistical analysis
+    stat_report = run_statistical_analysis(df, profile)
+    stat_findings = generate_statistical_findings(stat_report)
+    key_findings.extend(stat_findings)
+
     # Generate charts with interestingness filtering
-    recommendations = select_charts(profile, df)
+    recommendations = select_charts(profile, df, stat_report)
     charts: list[ReportChart] = []
     for rec in recommendations:
-        image_b64 = generate_matplotlib_base64(rec, df)
+        if rec.chart_type in _PLOTLY_CHART_TYPES:
+            image_b64 = generate_plotly_base64(rec, df)
+        else:
+            image_b64 = generate_matplotlib_base64(rec, df)
         charts.append(ReportChart(
             title=rec.title,
             description=rec.description,
@@ -120,6 +154,7 @@ def build_report(
         sections=sections,
         executive_narrative=executive_narrative,
         data_overview_narrative=data_overview_narrative,
+        statistical_report=stat_report,
     )
 
 

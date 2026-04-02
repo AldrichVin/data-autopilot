@@ -376,6 +376,7 @@
       {% for section in report.sections %}
       <li><a href="#{{ section.id }}">{{ section.title }}</a></li>
       {% endfor %}
+      {% if report.statistical_report %}<li><a href="#stat-tests">Statistical Test Results</a></li>{% endif %}
       {% if report.cleaning_report %}<li><a href="#cleaning">Cleaning Impact</a></li>{% endif %}
       <li><a href="#appendix">Appendix: Column Profiles</a></li>
     </ol>
@@ -490,7 +491,7 @@
 
     <div class="chart-grid">
       {% for chart in section.charts %}
-      <div class="chart-card{% if chart.chart_type | enum_val in ['heatmap', 'missing_matrix'] %} chart-full{% endif %}">
+      <div class="chart-card{% if chart.chart_type | enum_val in ['heatmap', 'missing_matrix', 'treemap', 'sunburst', 'sankey', 'parallel_coords', 'pca_biplot', 'cluster_scatter', 'anomaly_scatter'] %} chart-full{% endif %}">
         <img src="data:image/png;base64,{{ chart.image_base64 }}" alt="{{ chart.title }}">
         <div class="chart-info">
           <div class="chart-title">{{ chart.title }}</div>
@@ -505,7 +506,66 @@
   </div>
   {% endfor %}
 
-  <!-- ── 5. Cleaning Impact ── -->
+  <!-- ── 5. Statistical Test Results ── -->
+  {% if report.statistical_report and report.statistical_report.tests %}
+  <div class="section" id="stat-tests">
+    <h2 class="section-title">Statistical Test Results</h2>
+    <p class="section-narrative">
+      Hypothesis tests quantify the significance of observed patterns.
+      Tests with p &lt; 0.05 indicate statistically significant results.
+    </p>
+
+    {% if report.statistical_report.clusters or report.statistical_report.anomalies or report.statistical_report.pca %}
+    <div class="stat-grid" style="margin-bottom: 24px;">
+      {% if report.statistical_report.clusters %}
+      <div class="stat-card">
+        <div class="value">{{ report.statistical_report.clusters.optimal_k }}</div>
+        <div class="label">Clusters Found</div>
+      </div>
+      {% endif %}
+      {% if report.statistical_report.anomalies %}
+      <div class="stat-card">
+        <div class="value">{{ report.statistical_report.anomalies.n_anomalies }}</div>
+        <div class="label">Anomalies Detected</div>
+      </div>
+      {% endif %}
+      {% if report.statistical_report.pca %}
+      <div class="stat-card">
+        <div class="value">{{ report.statistical_report.pca.n_components_95 }}</div>
+        <div class="label">PCA Components (95%)</div>
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <table class="profile-table">
+      <thead>
+        <tr>
+          <th>Test</th>
+          <th>Column(s)</th>
+          <th>Statistic</th>
+          <th>p-value</th>
+          <th>Interpretation</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for test in report.statistical_report.tests %}
+        <tr>
+          <td><strong>{{ test.test_name }}</strong></td>
+          <td>{{ test.columns | join(", ") }}</td>
+          <td style="font-feature-settings: 'tnum';">{{ "%.4f"|format(test.statistic) }}</td>
+          <td style="font-feature-settings: 'tnum'; {% if test.p_value < 0.05 %}color: var(--primary); font-weight: 600;{% endif %}">
+            {{ "%.6f"|format(test.p_value) }}
+          </td>
+          <td style="font-size: 13px;">{{ test.interpretation }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  <!-- ── 6. Cleaning Impact ── -->
   {% if report.cleaning_report %}
   <div class="section" id="cleaning">
     <h2 class="section-title">Cleaning Impact</h2>

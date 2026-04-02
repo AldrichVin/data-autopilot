@@ -9,7 +9,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from models.schemas import Alert, DataProfile, ReportChart, SectionNarrative
+from models.schemas import Alert, DataProfile, ReportChart, SectionNarrative, StatisticalReport
 
 
 # ---------------------------------------------------------------------------
@@ -281,4 +281,70 @@ def generate_section_narrative(
         headline = "Data quality visualizations expose patterns in missing or problematic values."
         return SectionNarrative(headline=headline, body="Systematic patterns in missing data can reveal data collection issues.")
 
+    if section_key == "statistical_analysis":
+        headline = (
+            f"Advanced statistical analysis reveals hidden structure in the data "
+            f"through {chart_count} visualization{'s' if chart_count != 1 else ''}."
+        )
+        body = (
+            "Machine learning techniques including PCA, clustering, and anomaly detection "
+            "uncover patterns not visible in univariate or bivariate analysis."
+        )
+        return SectionNarrative(headline=headline, body=body)
+
     return SectionNarrative(headline=f"This section presents {chart_count} visualization{'s' if chart_count != 1 else ''}.")
+
+
+# ---------------------------------------------------------------------------
+# Statistical findings
+# ---------------------------------------------------------------------------
+
+def generate_statistical_findings(
+    stat_report: StatisticalReport,
+) -> list[str]:
+    """Produce executive-summary bullets from statistical analysis results."""
+    findings: list[str] = []
+
+    if stat_report.clusters:
+        c = stat_report.clusters
+        findings.append(
+            f"{c.optimal_k} natural clusters detected in the data "
+            f"(silhouette score: {c.silhouette_score:.2f})"
+        )
+
+    if stat_report.pca:
+        p = stat_report.pca
+        findings.append(
+            f"PCA: {p.n_components_95} component{'s' if p.n_components_95 != 1 else ''} "
+            f"explain 95% of variance"
+        )
+
+    if stat_report.anomalies:
+        a = stat_report.anomalies
+        findings.append(
+            f"{a.n_anomalies} anomalous records identified ({a.anomaly_pct}% of data)"
+        )
+        if a.top_anomaly_columns:
+            findings.append(
+                f"Top anomaly-contributing columns: {', '.join(a.top_anomaly_columns[:3])}"
+            )
+
+    non_normal = [
+        t for t in stat_report.tests
+        if t.test_name == "Shapiro-Wilk" and t.p_value < 0.05
+    ]
+    if non_normal:
+        names = ", ".join(t.columns[0] for t in non_normal[:3])
+        findings.append(f"Non-normal distributions detected: {names}")
+
+    significant_assoc = [
+        t for t in stat_report.tests
+        if t.test_name == "Chi-square" and t.p_value < 0.05
+    ]
+    if significant_assoc:
+        findings.append(
+            f"{len(significant_assoc)} significant categorical association"
+            f"{'s' if len(significant_assoc) != 1 else ''} found"
+        )
+
+    return findings
