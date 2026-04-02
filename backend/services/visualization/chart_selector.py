@@ -142,6 +142,9 @@ def _candidate_histograms(
 
         score = 0.0
         annotations = []
+        mean_val = float(series.mean())
+        median_val = float(series.median())
+        std_val = float(series.std())
         skew = float(series.skew()) if len(series) > 2 else 0.0
         has_out = _has_outliers(series)
         bimodal = _is_bimodal(series)
@@ -165,13 +168,33 @@ def _candidate_histograms(
 
         if score > 0:
             annotation = ". ".join(annotations).capitalize() + "." if annotations else ""
+
+            # Data-driven description
+            shape_desc = (
+                f"skewed right — most values cluster below the mean"
+                if skew > 1.0 else
+                f"skewed left — most values cluster above the mean"
+                if skew < -1.0 else
+                f"roughly symmetric around {mean_val:.1f}"
+            )
+            description = (
+                f"Shows how {col.name} values are distributed. "
+                f"The dashed lines mark the mean ({mean_val:.1f}) and median ({median_val:.1f}). "
+                f"The distribution is {shape_desc}."
+            )
+
             results.append(ChartRecommendation(
                 chart_type=ChartType.HISTOGRAM,
                 columns=[col.name],
                 title=f"Distribution of {col.name}",
-                description=f"Frequency distribution of {col.name} with mean and median reference lines",
+                description=description,
                 interestingness=score,
                 annotation=annotation,
+                reading_guide=(
+                    "Each bar shows how many records fall in that value range. "
+                    "Taller bars = more common values. Dashed lines mark the mean and median — "
+                    "when they diverge, the distribution is skewed."
+                ),
             ))
     return results
 
@@ -188,23 +211,32 @@ def _candidate_bars(
         counts = df[col.name].value_counts()
         top_val = counts.index[0]
         top_pct = counts.iloc[0] / total_rows * 100
+        top3_pct = counts.iloc[:3].sum() / total_rows * 100 if len(counts) >= 3 else top_pct
 
         score = 0.0
         if entropy > 0.5:
             score += 0.5
         if len(counts) >= 3:
             score += 0.3
-        # Penalize if one category dominates >90%
         if top_pct > 90:
             score = 0.0
 
         if score > 0:
             annotation = f"'{top_val}' is the most frequent category, accounting for {top_pct:.0f}% of records."
+            concentration = (
+                f"; the top 3 categories account for {top3_pct:.0f}% of all records"
+                if top3_pct > 50 and len(counts) >= 3 else ""
+            )
+            description = (
+                f"Frequency of each {col.name} value. "
+                f"'{top_val}' leads at {top_pct:.0f}%{concentration}."
+            )
+
             results.append(ChartRecommendation(
                 chart_type=ChartType.BAR,
                 columns=[col.name],
                 title=f"Counts by {col.name}",
-                description=f"Value distribution across {col.unique_count} categories",
+                description=description,
                 interestingness=score,
                 annotation=annotation,
             ))
@@ -230,13 +262,30 @@ def _candidate_scatters(
             f"between {col_a} and {col_b} (r={corr:.2f})."
         )
 
+        tightness = (
+            "Points cluster tightly around the trend line, confirming a strong relationship."
+            if abs(corr) > 0.8 else
+            "Points spread moderately — a clear trend exists but with notable variation."
+            if abs(corr) > 0.5 else
+            "Points are widely scattered — the relationship is weak."
+        )
+        description = (
+            f"Each point represents one record plotting {col_a} against {col_b}. "
+            f"{tightness}"
+        )
+
         results.append(ChartRecommendation(
             chart_type=ChartType.SCATTER,
             columns=[col_a, col_b],
             title=f"{col_a} vs {col_b} (r={corr:.2f})",
-            description=f"Scatter plot with regression trend line",
+            description=description,
             interestingness=abs(corr),
             annotation=annotation,
+            reading_guide=(
+                "Each dot = one record. The trend line shows the overall direction. "
+                "Tightly clustered dots = strong relationship. Scattered dots = weak relationship. "
+                "r near +1 = move together, r near -1 = move opposite."
+            ),
         ))
     return results
 
@@ -256,13 +305,30 @@ def _candidate_timeseries(
 
     results = []
     for num_col in numeric_cols[:2]:
+        series = pd.to_numeric(df[num_col.name], errors="coerce").dropna()
+        trend_desc = ""
+        if len(series) > 10:
+            first_half = series.iloc[:len(series)//2].mean()
+            second_half = series.iloc[len(series)//2:].mean()
+            pct_change = (second_half - first_half) / abs(first_half) * 100 if first_half != 0 else 0
+            if abs(pct_change) > 5:
+                direction = "upward" if pct_change > 0 else "downward"
+                trend_desc = f" An overall {direction} trend is visible ({pct_change:+.1f}% from first to second half)."
+
+        description = (
+            f"Tracks {num_col.name} across {n_timepoints} time points.{trend_desc}"
+        )
         results.append(ChartRecommendation(
             chart_type=ChartType.LINE,
             columns=[dt_col.name, num_col.name],
             title=f"{num_col.name} over time",
-            description=f"Time series of {num_col.name} across {n_timepoints} time points",
+            description=description,
             interestingness=0.8,
             annotation=f"Tracking {num_col.name} across {n_timepoints} time points reveals temporal patterns.",
+            reading_guide=(
+                "X-axis = time, Y-axis = value. Look for trends (sustained rise/fall), "
+                "seasonality (repeating patterns), and anomalies (sudden spikes or drops)."
+            ),
         ))
     return results
 
@@ -275,18 +341,48 @@ def _candidate_heatmap(
 
     col_names = [c.name for c in numeric_cols[:10]]
     pairs = _rank_pairs_by_correlation(col_names, df)
-    max_corr = max((abs(c) for _, _, c in pairs), default=0)
+    if not pairs:
+        return []
 
+    max_corr = max((abs(c) for _, _, c in pairs), default=0)
     if max_corr < 0.5:
         return []
+
+    # Find strongest positive and negative pairs
+    top_pair = pairs[0]
+    neg_pairs = [p for p in pairs if p[2] < 0]
+    neg_pair = neg_pairs[0] if neg_pairs else None
+
+    description = (
+        f"Each cell shows how strongly two columns are related (-1 to +1). "
+        f"Red = move together, blue = move opposite. "
+        f"Strongest pair: {top_pair[0]} & {top_pair[1]} (r={top_pair[2]:.2f})"
+    )
+    if neg_pair and neg_pair[2] < -0.3:
+        description += f". Most inverse: {neg_pair[0]} & {neg_pair[1]} (r={neg_pair[2]:.2f})"
+    description += "."
+
+    annotation = (
+        f"Strongest pair: {top_pair[0]} & {top_pair[1]} (r={top_pair[2]:.2f})"
+    )
+    if abs(top_pair[2]) > 0.9:
+        annotation += " — highly redundant, consider dropping one for modeling"
+    annotation += "."
+    if neg_pair and neg_pair[2] < -0.5:
+        annotation += f" {neg_pair[0]} and {neg_pair[1]} are inversely related (r={neg_pair[2]:.2f})."
 
     return [ChartRecommendation(
         chart_type=ChartType.HEATMAP,
         columns=col_names,
         title="Correlation Heatmap",
-        description=f"Pairwise Pearson correlations between {len(col_names)} numeric columns",
+        description=description,
         interestingness=max_corr,
-        annotation=f"Strongest correlation: r={max_corr:.2f}. Values near ±1 indicate strong linear relationships.",
+        annotation=annotation,
+        reading_guide=(
+            "Each cell = correlation between two variables. "
+            "Red/warm = positive (move together), Blue/cool = negative (move opposite). "
+            "Darker color = stronger relationship. Look for clusters of red or blue."
+        ),
     )]
 
 
@@ -303,15 +399,31 @@ def _candidate_box_plots(
             for num in numeric_cols[:2]:
                 if not _has_outliers(df[num.name]):
                     continue
+                grouped = df.groupby(cat.name)[num.name].apply(
+                    lambda s: pd.to_numeric(s, errors="coerce").dropna().median()
+                )
+                if len(grouped) < 2:
+                    continue
+                high_group = grouped.idxmax()
+                low_group = grouped.idxmin()
+                description = (
+                    f"Compares {num.name} across {cat.unique_count} {cat.name} groups. "
+                    f"'{high_group}' has the highest median, '{low_group}' the lowest."
+                )
                 results.append(ChartRecommendation(
                     chart_type=ChartType.BOX,
                     columns=[cat.name, num.name],
                     title=f"{num.name} by {cat.name}",
-                    description=f"Distribution comparison of {num.name} across {cat.unique_count} groups",
+                    description=description,
                     interestingness=0.9,
                     annotation=(
                         f"Box plot comparing {num.name} across {cat.name} categories. "
                         f"Boxes show IQR; whiskers extend to 1.5x IQR; dots are outliers."
+                    ),
+                    reading_guide=(
+                        "The box = middle 50% of values (IQR). Line inside = median. "
+                        "Whiskers = range of typical values. Dots beyond whiskers = outliers. "
+                        "Compare box positions to see which groups have higher/lower values."
                     ),
                 ))
     return results
@@ -334,16 +446,23 @@ def _candidate_grouped_bars(
             grouped = df.groupby(cat.name)[num.name].mean()
             range_ratio = (grouped.max() - grouped.min()) / grouped.mean() if grouped.mean() != 0 else 0
 
+            highest_cat = grouped.idxmax()
+            lowest_cat = grouped.idxmin()
             annotation = (
                 f"Average {num.name} varies across {cat.name} categories"
                 + (f" by up to {range_ratio:.0%}." if range_ratio > 0.1 else ".")
+            )
+            description = (
+                f"Mean {num.name} across {cat.unique_count} {cat.name} categories. "
+                f"'{highest_cat}' has the highest average ({grouped.max():.1f}), "
+                f"'{lowest_cat}' the lowest ({grouped.min():.1f})."
             )
 
             results.append(ChartRecommendation(
                 chart_type=ChartType.GROUPED_BAR,
                 columns=[cat.name, num.name],
                 title=f"Average {num.name} by {cat.name}",
-                description=f"Mean {num.name} across {cat.unique_count} categories",
+                description=description,
                 interestingness=min(0.7, entropy),
                 annotation=annotation,
             ))
@@ -360,15 +479,27 @@ def _candidate_missing_matrix(
     col_names = [c.name for c in cols_with_missing]
     avg_missing = sum(c.null_pct for c in cols_with_missing) / len(cols_with_missing)
 
+    worst_col = max(cols_with_missing, key=lambda c: c.null_pct)
+    description = (
+        f"Visualizes missing data patterns across {len(col_names)} columns. "
+        f"'{worst_col.name}' has the most gaps at {worst_col.null_pct:.1f}% missing. "
+        f"Average missingness across flagged columns: {avg_missing:.1f}%."
+    )
+
     return [ChartRecommendation(
         chart_type=ChartType.MISSING_MATRIX,
         columns=col_names,
         title="Missing Data Patterns",
-        description=f"Missingness pattern across {len(col_names)} columns with >1% null values",
+        description=description,
         interestingness=min(1.0, avg_missing / 10),
         annotation=(
             f"{len(col_names)} columns have notable missing data. "
             f"Clustered patterns may indicate systematic data collection issues."
+        ),
+        reading_guide=(
+            "White = data present, colored = missing. Each column = a dataset column. "
+            "Look for horizontal bands (rows missing many columns simultaneously) "
+            "or vertical bands (a column missing across many rows)."
         ),
     )]
 
@@ -408,13 +539,26 @@ def _candidate_treemap(
     if numeric_cols:
         cols.append(numeric_cols[0].name)
 
+    # Compute dominant category
+    top_parent = df[parent].value_counts().index[0]
+    top_parent_pct = df[parent].value_counts(normalize=True).iloc[0] * 100
+    description = (
+        f"Hierarchical breakdown of {child} grouped by {parent}. "
+        f"Rectangle size = record count. '{top_parent}' is the largest group ({top_parent_pct:.0f}%)."
+    )
+
     return [ChartRecommendation(
         chart_type=ChartType.TREEMAP,
         columns=cols,
         title=f"Treemap: {child} within {parent}",
-        description=f"Hierarchical breakdown of {child} grouped by {parent}",
+        description=description,
         interestingness=0.8,
         annotation=f"Treemap reveals the hierarchical relationship between {parent} and {child}.",
+        reading_guide=(
+            "Larger rectangles = more records in that category. "
+            "Nested rectangles show subcategories within each group. "
+            "Compare rectangle sizes to see which categories dominate."
+        ),
     )]
 
 
@@ -433,13 +577,25 @@ def _candidate_sunburst(
     if numeric_cols:
         cols.append(numeric_cols[0].name)
 
+    n_levels = len(cols) - (1 if numeric_cols else 0)
+    description = (
+        f"Hierarchical breakdown of {' → '.join(cols[:3])}. "
+        f"Inner ring = {cols[0]}, each outer ring subdivides further. "
+        f"Slice size = record count. Larger slices = more prevalent combinations."
+    )
+
     return [ChartRecommendation(
         chart_type=ChartType.SUNBURST,
         columns=cols,
         title=f"Sunburst: {' > '.join(cols[:3])}",
-        description=f"Nested categorical breakdown across {len(cols) - (1 if numeric_cols else 0)} levels",
+        description=description,
         interestingness=0.85,
         annotation="Sunburst chart shows nested hierarchical structure across multiple categorical dimensions.",
+        reading_guide=(
+            "Inner ring = first category. Outer rings = subdivisions. "
+            "Slice size = count. Read from center outward to see how categories break down. "
+            "Click a slice to zoom into that branch."
+        ),
     )]
 
 
@@ -467,13 +623,27 @@ def _candidate_sankey(
             if entropy_a < 0.4 or entropy_b < 0.4:
                 continue
 
+            # Find dominant flow
+            flow_df = df.groupby([col_a.name, col_b.name]).size().reset_index(name="count")
+            top_flow = flow_df.loc[flow_df["count"].idxmax()]
+            description = (
+                f"Shows how records flow from {col_a.name} to {col_b.name} across {n_flows} paths. "
+                f"Thicker bands = more records. Dominant flow: "
+                f"'{top_flow[col_a.name]}' → '{top_flow[col_b.name]}' ({top_flow['count']} records)."
+            )
+
             return [ChartRecommendation(
                 chart_type=ChartType.SANKEY,
                 columns=[col_a.name, col_b.name],
                 title=f"Flow: {col_a.name} → {col_b.name}",
-                description=f"Flow diagram showing {n_flows} connections between categories",
+                description=description,
                 interestingness=0.9,
                 annotation=f"Sankey diagram reveals {n_flows} distinct flow paths from {col_a.name} to {col_b.name}.",
+                reading_guide=(
+                    "Left nodes = source categories, right nodes = target categories. "
+                    "Band thickness = number of records flowing between them. "
+                    "Follow the thickest bands to see the most common transitions."
+                ),
             )]
     return []
 
@@ -496,11 +666,17 @@ def _candidate_bubble(
 
     size_col = max(remaining, key=lambda c: c.stats.std if c.stats else 0)
 
+    description = (
+        f"Each bubble plots {col_a} vs {col_b} (r={corr:.2f}), with bubble size "
+        f"representing {size_col.name}. Larger bubbles = higher {size_col.name} values. "
+        f"Look for whether large bubbles cluster in specific regions."
+    )
+
     return [ChartRecommendation(
         chart_type=ChartType.BUBBLE,
         columns=[col_a, col_b, size_col.name],
         title=f"{col_a} vs {col_b} (sized by {size_col.name})",
-        description=f"Bubble chart with size encoding on {size_col.name}",
+        description=description,
         interestingness=abs(corr) + 0.2,
         annotation=(
             f"Bubble chart extends the scatter relationship (r={corr:.2f}) "
@@ -522,15 +698,26 @@ def _candidate_parallel_coords(
     if not has_strong:
         return []
 
+    description = (
+        f"Each line traces one record across {len(col_names)} variables. "
+        f"Parallel lines between axes = correlated variables. "
+        f"Crossing lines = inversely related variables."
+    )
+
     return [ChartRecommendation(
         chart_type=ChartType.PARALLEL_COORDS,
         columns=col_names,
         title="Parallel Coordinates Overview",
-        description=f"Multivariate view across {len(col_names)} numeric dimensions",
+        description=description,
         interestingness=0.7,
         annotation=(
             f"Parallel coordinates plot reveals multivariate patterns across "
             f"{len(col_names)} variables. Crossing lines indicate inverse relationships."
+        ),
+        reading_guide=(
+            "Each vertical axis = one variable. Each line = one record passing through all axes. "
+            "Lines running parallel between two axes = those variables are correlated. "
+            "Lines that cross = inverse relationship. Dense bundles = common patterns."
         ),
     )]
 
@@ -555,13 +742,29 @@ def _candidate_radar(
     if cv < 0.3:
         return []
 
+    # Find strongest and weakest axes
+    normalized = (numeric_df - numeric_df.min()) / (numeric_df.max() - numeric_df.min() + 1e-10)
+    norm_means = normalized.mean()
+    strongest = norm_means.idxmax()
+    weakest = norm_means.idxmin()
+    description = (
+        f"Compares {len(col_names)} metrics on a normalized scale (0-1). "
+        f"'{strongest}' scores highest relative to its range, "
+        f"'{weakest}' scores lowest. The shape reveals the dataset's characteristic profile."
+    )
+
     return [ChartRecommendation(
         chart_type=ChartType.RADAR,
         columns=col_names,
         title="Multi-Metric Radar Profile",
-        description=f"Comparative profile across {len(col_names)} normalized metrics",
+        description=description,
         interestingness=0.75,
         annotation="Radar chart shows the normalized mean of each metric, revealing the dataset's characteristic profile.",
+        reading_guide=(
+            "Each spoke = one metric, normalized to 0-1. The filled shape shows average values. "
+            "Spokes pointing further out = higher relative values. "
+            "A perfectly round shape = all metrics are balanced."
+        ),
     )]
 
 
@@ -586,11 +789,19 @@ def _candidate_waterfall(
             if not has_negative and range_ratio < 0.5:
                 continue
 
+            top_cat = grouped.idxmax()
+            top_val = grouped.max()
+            description = (
+                f"Shows how each {cat.name} contributes to total {num.name}. "
+                f"'{top_cat}' makes the largest contribution ({top_val:,.1f}). "
+                f"Blue = positive contribution, red = negative."
+            )
+
             return [ChartRecommendation(
                 chart_type=ChartType.WATERFALL,
                 columns=[cat.name, num.name],
                 title=f"Waterfall: {num.name} by {cat.name}",
-                description=f"Cumulative contribution of each {cat.name} to total {num.name}",
+                description=description,
                 interestingness=0.8,
                 annotation=f"Waterfall chart shows how each {cat.name} contributes to the total {num.name}.",
             )]
@@ -612,42 +823,92 @@ def _candidate_statistical_charts(
     if stat_report.pca and len(col_names) >= 4:
         ev = stat_report.pca.explained_variance
         total_2d = sum(ev[:2]) if len(ev) >= 2 else 0
+        n_95 = stat_report.pca.n_components_95
+        description = (
+            f"PCA compresses {len(col_names)} variables into 2 axes capturing {total_2d:.1%} "
+            f"of total variation. Arrows represent variables — direction shows axis alignment, "
+            f"length shows contribution. Variables pointing the same way are correlated."
+        )
+        annotation = (
+            f"PCA reduces {len(col_names)} dimensions to 2 components capturing "
+            f"{total_2d:.1%} of total variance. "
+            f"{n_95} component{'s' if n_95 != 1 else ''} needed for 95% coverage."
+        )
         results.append(ChartRecommendation(
             chart_type=ChartType.PCA_BIPLOT,
             columns=col_names,
             title="PCA Biplot",
-            description=f"First 2 principal components explain {total_2d:.1%} of variance",
+            description=description,
             interestingness=0.85,
-            annotation=(
-                f"PCA reduces {len(col_names)} dimensions to 2 components capturing "
-                f"{total_2d:.1%} of total variance. Arrows show original variable loadings."
+            annotation=annotation,
+            reading_guide=(
+                "Dots = data points on 2 principal axes. Arrows = original variables. "
+                "Direction = which axis it loads on. Length = importance. "
+                "Same-direction arrows = correlated variables. Opposite arrows = inversely related."
             ),
         ))
 
     if stat_report.clusters and len(col_names) >= 3:
         k = stat_report.clusters.optimal_k
         sil = stat_report.clusters.silhouette_score
+        sizes = stat_report.clusters.cluster_sizes
+        sil_desc = "well-separated" if sil > 0.5 else "moderately distinct" if sil > 0.25 else "overlapping"
+        description = (
+            f"Data grouped into {k} clusters, projected to 2D. "
+            f"Clusters are {sil_desc} (silhouette: {sil:.2f}, where 1.0 = perfect separation). "
+            f"Each color is a cluster — look for distinct groupings vs overlap."
+        )
+        annotation_parts = [f"{k} natural groupings detected"]
+        if sizes:
+            annotation_parts.append(
+                f"Largest: {max(sizes)} records, smallest: {min(sizes)}"
+            )
+        if sil < 0.25:
+            annotation_parts.append("Significant overlap suggests the data may lack distinct subgroups")
+        else:
+            annotation_parts.append("Clear separation indicates meaningful subgroups")
+        annotation = ". ".join(annotation_parts) + "."
+
         results.append(ChartRecommendation(
             chart_type=ChartType.CLUSTER_SCATTER,
             columns=col_names,
             title=f"Cluster Analysis ({k} clusters)",
-            description=f"K-means clustering projected to 2D via PCA (silhouette: {sil:.2f})",
+            description=description,
             interestingness=0.9,
-            annotation=f"{k} clusters detected with silhouette score {sil:.2f}. Points colored by cluster membership.",
+            annotation=annotation,
+            reading_guide=(
+                "Each color = a cluster (natural grouping). Points close together = similar records. "
+                "Overlap between colors = hard-to-distinguish groups. "
+                "Well-separated clusters indicate meaningful subgroups in the data."
+            ),
         ))
 
     if stat_report.anomalies and len(col_names) >= 2:
         n = stat_report.anomalies.n_anomalies
         pct = stat_report.anomalies.anomaly_pct
+        top_cols = stat_report.anomalies.top_anomaly_columns
+        description = (
+            f"Red X markers show {n} records ({pct}%) that are statistically unusual. "
+            f"Identified using Isolation Forest — points that are easy to separate from the majority. "
+            f"Check these records for data errors or genuine exceptions."
+        )
+        annotation = (
+            f"{n} anomalous records ({pct}%) identified via Isolation Forest."
+        )
+        if top_cols:
+            annotation += f" Most contributing columns: {', '.join(top_cols[:3])}."
+
         results.append(ChartRecommendation(
             chart_type=ChartType.ANOMALY_SCATTER,
             columns=col_names,
             title=f"Anomaly Detection ({n} anomalies)",
-            description=f"Isolation Forest detected {n} anomalous records ({pct}%)",
+            description=description,
             interestingness=0.85,
-            annotation=(
-                f"{n} anomalous records ({pct}%) identified via Isolation Forest. "
-                f"Red markers show outlier points in PCA-projected space."
+            annotation=annotation,
+            reading_guide=(
+                "Blue dots = normal records. Red X = outlier. "
+                "Outliers are statistically unusual compared to the majority — "
+                "check for data entry errors or genuine exceptional cases."
             ),
         ))
 
