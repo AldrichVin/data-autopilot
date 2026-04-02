@@ -152,6 +152,7 @@ class ReportChart(BaseModel):
     chart_type: ChartType
     image_base64: str
     annotation: str = ""
+    reading_guide: str = ""
 
 
 class ReportSection(BaseModel):
@@ -225,3 +226,4 @@ class ChartRecommendation(BaseModel):
     description: str = ""
     interestingness: float = 0.0
     annotation: str = ""
+    reading_guide: str = ""
