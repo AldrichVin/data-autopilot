@@ -13,6 +13,14 @@ import plotly.graph_objects as go
 from models.enums import ChartType
 from models.schemas import ChartRecommendation
 
+import plotly.io as pio
+
+# Fix Kaleido blank exports on Windows (chromium subprocess issue)
+try:
+    pio.kaleido.scope.chromium_args += ("--single-process",)
+except Exception:
+    pass
+
 PALETTE = [
     "#2563eb", "#7c3aed", "#0891b2", "#059669",
     "#d97706", "#dc2626", "#4f46e5", "#0284c7",
@@ -62,22 +70,23 @@ def generate_plotly_base64(
     fig = generator(rec, df)
 
     width, height = 900, 650
+    MAX_RETRIES = 3
 
-    def _export() -> bytes:
+    for attempt in range(MAX_RETRIES):
         try:
-            return fig.to_image(format="png", width=width, height=height, scale=2)
+            img_bytes = fig.to_image(
+                format="png", width=width, height=height, scale=2,
+            )
         except Exception:
             buf = io.BytesIO()
             fig.write_image(buf, format="png", width=width, height=height, scale=2)
             buf.seek(0)
-            return buf.read()
+            img_bytes = buf.read()
 
-    img_bytes = _export()
-
-    # Validate the image isn't blank (Kaleido can silently fail on Windows)
-    if len(img_bytes) < 1000:
-        time.sleep(0.5)
-        img_bytes = _export()
+        # Kaleido can silently produce blank PNGs on Windows
+        if len(img_bytes) > 2000:
+            break
+        time.sleep(0.5 * (attempt + 1))
 
     return base64.b64encode(img_bytes).decode("utf-8")
 
@@ -318,27 +327,44 @@ def _pca_biplot(rec: ChartRecommendation, df: pd.DataFrame) -> go.Figure:
         x=projected[:, 0],
         y=projected[:, 1],
         mode="markers",
-        marker=dict(size=5, color=PALETTE[0], opacity=0.5),
+        marker=dict(size=5, color=PALETTE[0], opacity=0.4),
         name="Data points",
     ))
 
-    # Loading arrows
-    for i, col in enumerate(cols):
+    # Loading arrows — limit to top 8 by magnitude to avoid clutter
+    MAX_ARROWS = 8
+    loadings = pca.components_[:2, :]  # shape (2, n_features)
+    magnitudes = np.sqrt(loadings[0] ** 2 + loadings[1] ** 2)
+    top_indices = np.argsort(magnitudes)[-MAX_ARROWS:]
+
+    # Scale arrows to ~40% of data range for readability
+    data_range = max(
+        projected[:, 0].max() - projected[:, 0].min(),
+        projected[:, 1].max() - projected[:, 1].min(),
+    )
+    max_mag = magnitudes[top_indices].max()
+    arrow_scale = (data_range * 0.4) / (max_mag + 1e-10)
+
+    for i in top_indices:
+        lx = loadings[0, i] * arrow_scale
+        ly = loadings[1, i] * arrow_scale
         fig.add_annotation(
-            x=pca.components_[0, i] * 3,
-            y=pca.components_[1, i] * 3,
+            x=lx, y=ly,
             ax=0, ay=0,
             xref="x", yref="y", axref="x", ayref="y",
             showarrow=True,
             arrowhead=2,
+            arrowwidth=1.5,
             arrowcolor=PALETTE[5],
         )
         fig.add_annotation(
-            x=pca.components_[0, i] * 3.3,
-            y=pca.components_[1, i] * 3.3,
-            text=col,
+            x=lx * 1.12,
+            y=ly * 1.12,
+            text=cols[i],
             showarrow=False,
-            font=dict(size=10, color=PALETTE[5]),
+            font=dict(size=9, color=PALETTE[5]),
+            bgcolor="rgba(255,255,255,0.8)",
+            borderpad=2,
         )
 
     fig.update_layout(
