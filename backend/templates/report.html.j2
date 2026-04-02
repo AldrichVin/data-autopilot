@@ -489,9 +489,21 @@
 
     .profile-table tr:hover td { background: none; }
 
-    .alert { border-left-width: 2px; }
+    .alert {
+      border-left-width: 2px;
+      background: none;
+      color: #1a1a1a;
+    }
+
+    .type-badge {
+      border: 1px solid #ccc;
+      background: none;
+      color: #1a1a1a;
+    }
 
     .stat-card .value { color: #000; }
+
+    .findings-list li { border-bottom-color: #ddd; }
   }
 
   @media (max-width: 700px) {
@@ -636,6 +648,7 @@
   {% endif %}
 
   <!-- ── 4+. Thematic Chart Sections ── -->
+  {% set ns_after_charts = namespace(counter=ns_section.counter + report.sections | length) %}
   {% for section in report.sections %}
   <div class="section" id="{{ section.id }}">
     <h2 class="section-title"><span class="section-number">{{ ns_section.counter + loop.index0 }}</span>{{ section.title }}</h2>
@@ -666,14 +679,15 @@
   <!-- ── Statistical Test Results ── -->
   {% if report.statistical_report and report.statistical_report.tests %}
   <div class="section" id="stat-tests">
-    <h2 class="section-title">Statistical Test Results</h2>
+    <h2 class="section-title"><span class="section-number">{{ ns_after_charts.counter }}</span>Statistical Test Results</h2>
+    {% set ns_after_charts = namespace(counter=ns_after_charts.counter + 1) %}
     <p class="section-narrative">
       Hypothesis tests quantify the significance of observed patterns.
       Tests with p &lt; 0.05 indicate statistically significant results.
     </p>
 
     {% if report.statistical_report.clusters or report.statistical_report.anomalies or report.statistical_report.pca %}
-    <div class="stat-grid" style="margin-bottom: 24px;">
+    <div class="stat-grid">
       {% if report.statistical_report.clusters %}
       <div class="stat-card">
         <div class="value">{{ report.statistical_report.clusters.optimal_k }}</div>
@@ -725,7 +739,8 @@
   <!-- ── Cleaning Impact ── -->
   {% if report.cleaning_report %}
   <div class="section" id="cleaning">
-    <h2 class="section-title">Cleaning Impact</h2>
+    <h2 class="section-title"><span class="section-number">{{ ns_after_charts.counter }}</span>Cleaning Impact</h2>
+    {% set ns_after_charts = namespace(counter=ns_after_charts.counter + 1) %}
     <p class="section-narrative">
       The automated cleaning pipeline processed the dataset in
       {{ "{:,}".format(report.cleaning_report.duration_ms) }}ms,
@@ -768,7 +783,7 @@
 
   <!-- ── Appendix: Column Profiles ── -->
   <div class="section" id="appendix">
-    <h2 class="section-title">Appendix: Column Profiles</h2>
+    <h2 class="section-title"><span class="section-number">{{ ns_after_charts.counter }}</span>Appendix: Column Profiles</h2>
     <p class="section-narrative">Detailed metadata for each column in the dataset.</p>
 
     <table class="profile-table">
