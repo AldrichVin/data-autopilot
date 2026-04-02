@@ -47,22 +47,22 @@ def _register(chart_type: ChartType):
 # Public API
 # ---------------------------------------------------------------------------
 
+_FRONTEND_OVERRIDES: dict[ChartType, Callable] = {}
+
+
 def generate_plotly_json(
     rec: ChartRecommendation, df: pd.DataFrame,
 ) -> dict:
     """Return Plotly JSON spec for frontend rendering."""
     import json
 
-    generator = _GENERATORS.get(rec.chart_type)
+    # Use frontend-specific generator if available (e.g. for sunburst/treemap)
+    generator = _FRONTEND_OVERRIDES.get(rec.chart_type, _GENERATORS.get(rec.chart_type))
     if not generator:
         return {}
     fig = generator(rec, df)
     # JSON round-trip to convert numpy arrays to plain Python types
     return json.loads(fig.to_json())
-
-
-# Charts that only render reliably as static images (not interactive frontend)
-STATIC_ONLY_CHARTS = {ChartType.SUNBURST, ChartType.TREEMAP}
 
 
 def generate_plotly_base64(
@@ -143,6 +143,92 @@ def _sunburst(rec: ChartRecommendation, df: pd.DataFrame) -> go.Figure:
     fig = px.sunburst(plot_df, **kwargs)
     fig.update_layout(title=rec.title, **REPORT_LAYOUT)
     return fig
+
+
+# ---------------------------------------------------------------------------
+# Frontend-safe hierarchy builders (avoid px.sunburst path ambiguity in JS)
+# ---------------------------------------------------------------------------
+
+def _build_hierarchy(df: pd.DataFrame, cat_cols: list[str]) -> tuple:
+    """Build a complete hierarchy with unique ids for go.Sunburst/Treemap.
+
+    Returns (ids, labels, parents, values) with all intermediate nodes present.
+    """
+    ids: list[str] = []
+    labels: list[str] = []
+    parents: list[str] = []
+    values: list[int] = []
+    seen: set[str] = set()
+
+    # For each depth level, group and create nodes
+    for depth in range(len(cat_cols)):
+        cols_at_depth = cat_cols[: depth + 1]
+        grouped = df.groupby(cols_at_depth).size().reset_index(name="_count")
+
+        for _, row in grouped.iterrows():
+            node_id = "/".join(str(row[c]) for c in cols_at_depth)
+            if node_id in seen:
+                continue
+            seen.add(node_id)
+
+            ids.append(node_id)
+            labels.append(str(row[cat_cols[depth]]))
+            values.append(int(row["_count"]))
+
+            if depth == 0:
+                parents.append("")
+            else:
+                parent_id = "/".join(str(row[c]) for c in cols_at_depth[:-1])
+                parents.append(parent_id)
+
+    # Fix values: parent values must equal sum of children (for branchvalues="total")
+    id_to_idx = {nid: i for i, nid in enumerate(ids)}
+    child_sums: dict[str, int] = {}
+    for i, pid in enumerate(parents):
+        if pid:
+            child_sums[pid] = child_sums.get(pid, 0) + values[i]
+    for pid, total in child_sums.items():
+        if pid in id_to_idx:
+            values[id_to_idx[pid]] = total
+
+    return ids, labels, parents, values
+
+
+def _frontend_sunburst(rec: ChartRecommendation, df: pd.DataFrame) -> go.Figure:
+    cat_cols = [c for c in rec.columns if df[c].dtype == "object" or str(df[c].dtype) == "category"]
+    if len(cat_cols) < 1:
+        return go.Figure()
+
+    plot_df = df[cat_cols].dropna()
+    ids, labels, parents, values = _build_hierarchy(plot_df, cat_cols)
+
+    fig = go.Figure(go.Sunburst(
+        ids=ids, labels=labels, parents=parents, values=values,
+        branchvalues="total",
+    ))
+    fig.update_layout(title=rec.title, **REPORT_LAYOUT)
+    return fig
+
+
+def _frontend_treemap(rec: ChartRecommendation, df: pd.DataFrame) -> go.Figure:
+    cat_cols = [c for c in rec.columns if df[c].dtype == "object" or str(df[c].dtype) == "category"]
+    if len(cat_cols) < 1:
+        return go.Figure()
+
+    plot_df = df[cat_cols].dropna()
+    ids, labels, parents, values = _build_hierarchy(plot_df, cat_cols)
+
+    fig = go.Figure(go.Treemap(
+        ids=ids, labels=labels, parents=parents, values=values,
+        branchvalues="total",
+        textinfo="label+value+percent parent",
+    ))
+    fig.update_layout(title=rec.title, **REPORT_LAYOUT)
+    return fig
+
+
+_FRONTEND_OVERRIDES[ChartType.SUNBURST] = _frontend_sunburst
+_FRONTEND_OVERRIDES[ChartType.TREEMAP] = _frontend_treemap
 
 
 @_register(ChartType.SANKEY)
