@@ -1,4 +1,4 @@
-"""Assemble profiling, cleaning, and visualization data into a report."""
+"""Assemble profiling, cleaning, and visualization data into a journal-style report."""
 
 from __future__ import annotations
 
@@ -10,13 +10,21 @@ from jinja2 import Environment, FileSystemLoader
 
 from models.enums import ChartType
 from models.schemas import (
+    ChartRecommendation,
     CleaningReport,
     DataProfile,
     ReportChart,
     ReportData,
+    ReportSection,
 )
 from services import file_manager
-from services.insights import derive_key_findings, generate_alerts
+from services.insights import (
+    derive_key_findings,
+    generate_alerts,
+    generate_data_overview_narrative,
+    generate_executive_narrative,
+    generate_section_narrative,
+)
 from services.profiler import profile_dataframe
 from services.visualization.chart_selector import select_charts
 from services.visualization.matplotlib_gen import generate_matplotlib_base64
@@ -29,12 +37,41 @@ _jinja_env = Environment(
 
 
 def _enum_value(val: object) -> str:
-    """Extract the .value from an enum, or return str(val)."""
     return val.value if hasattr(val, "value") else str(val)
 
 
 _jinja_env.filters["enum_val"] = _enum_value
 
+
+# ---------------------------------------------------------------------------
+# Section grouping
+# ---------------------------------------------------------------------------
+
+_SECTION_MAP = {
+    ChartType.HISTOGRAM: "distributions",
+    ChartType.BOX: "distributions",
+    ChartType.VIOLIN: "distributions",
+    ChartType.BAR: "distributions",
+    ChartType.GROUPED_BAR: "distributions",
+    ChartType.SCATTER: "relationships",
+    ChartType.HEATMAP: "relationships",
+    ChartType.LINE: "temporal",
+    ChartType.MISSING_MATRIX: "data_quality",
+}
+
+_SECTION_TITLES = {
+    "distributions": "Distributions & Patterns",
+    "relationships": "Relationships",
+    "temporal": "Temporal Analysis",
+    "data_quality": "Data Quality",
+}
+
+_SECTION_ORDER = ["distributions", "relationships", "temporal", "data_quality"]
+
+
+# ---------------------------------------------------------------------------
+# Report assembly
+# ---------------------------------------------------------------------------
 
 def build_report(
     session_id: str,
@@ -49,7 +86,7 @@ def build_report(
     alerts = generate_alerts(profile, df)
     key_findings = derive_key_findings(profile, alerts, df)
 
-    # Generate charts as base64 PNGs
+    # Generate charts with interestingness filtering
     recommendations = select_charts(profile, df)
     charts: list[ReportChart] = []
     for rec in recommendations:
@@ -59,7 +96,15 @@ def build_report(
             description=rec.description,
             chart_type=rec.chart_type,
             image_base64=image_b64,
+            annotation=rec.annotation,
         ))
+
+    # Group charts into thematic sections
+    sections = _assemble_sections(charts, recommendations, profile, df)
+
+    # Generate narratives
+    executive_narrative = generate_executive_narrative(profile, alerts, df)
+    data_overview_narrative = generate_data_overview_narrative(profile, df)
 
     cleaning_report = _load_cleaning_report(session_id)
 
@@ -72,8 +117,42 @@ def build_report(
         cleaning_report=cleaning_report,
         charts=charts,
         key_findings=key_findings,
+        sections=sections,
+        executive_narrative=executive_narrative,
+        data_overview_narrative=data_overview_narrative,
     )
 
+
+def _assemble_sections(
+    charts: list[ReportChart],
+    recs: list[ChartRecommendation],
+    profile: DataProfile,
+    df: pd.DataFrame,
+) -> list[ReportSection]:
+    buckets: dict[str, list[ReportChart]] = {k: [] for k in _SECTION_ORDER}
+
+    for chart, rec in zip(charts, recs):
+        section_key = _SECTION_MAP.get(rec.chart_type, "distributions")
+        buckets[section_key].append(chart)
+
+    sections: list[ReportSection] = []
+    for key in _SECTION_ORDER:
+        if not buckets[key]:
+            continue
+        narrative = generate_section_narrative(key, buckets[key], profile, df)
+        sections.append(ReportSection(
+            id=key.replace("_", "-"),
+            title=_SECTION_TITLES[key],
+            narrative=narrative,
+            charts=buckets[key],
+        ))
+
+    return sections
+
+
+# ---------------------------------------------------------------------------
+# Render
+# ---------------------------------------------------------------------------
 
 def render_html(report: ReportData) -> str:
     template = _jinja_env.get_template("report.html.j2")
@@ -81,16 +160,13 @@ def render_html(report: ReportData) -> str:
 
 
 def render_pdf(html: str) -> bytes:
-    # Inline CSS custom properties for PDF renderers that don't support var()
     pdf_html = _inline_css_vars(html)
-
     try:
         from weasyprint import HTML
         return HTML(string=pdf_html).write_pdf()
     except (ImportError, OSError):
         import io
         from xhtml2pdf import pisa
-
         buf = io.BytesIO()
         pisa_status = pisa.CreatePDF(pdf_html, dest=buf)
         if pisa_status.err:
@@ -100,19 +176,23 @@ def render_pdf(html: str) -> bytes:
 
 
 _CSS_VARS = {
-    "var(--primary)": "#0088ed",
+    "var(--primary)": "#2563eb",
     "var(--dark)": "#1a1a2e",
-    "var(--chrome)": "#58544f",
+    "var(--text-secondary)": "#495057",
+    "var(--text-tertiary)": "#6c757d",
     "var(--bg)": "#ffffff",
     "var(--bg-alt)": "#f8f9fa",
+    "var(--bg-tertiary)": "#f1f3f5",
     "var(--border)": "#e9ecef",
+    "var(--border-medium)": "#dee2e6",
     "var(--warning-bg)": "#fff3cd",
     "var(--warning-text)": "#856404",
-    "var(--info-bg)": "#cce5ff",
+    "var(--info-bg)": "#cfe2ff",
     "var(--info-text)": "#004085",
     "var(--danger-bg)": "#f8d7da",
     "var(--danger-text)": "#721c24",
     "var(--success)": "#198754",
+    "var(--success-bg)": "#d1e7dd",
 }
 
 
