@@ -28,6 +28,14 @@ _jinja_env = Environment(
 )
 
 
+def _enum_value(val: object) -> str:
+    """Extract the .value from an enum, or return str(val)."""
+    return val.value if hasattr(val, "value") else str(val)
+
+
+_jinja_env.filters["enum_val"] = _enum_value
+
+
 def build_report(
     session_id: str,
     title: str = "Data Analysis Report",
@@ -73,8 +81,45 @@ def render_html(report: ReportData) -> str:
 
 
 def render_pdf(html: str) -> bytes:
-    from weasyprint import HTML
-    return HTML(string=html).write_pdf()
+    # Inline CSS custom properties for PDF renderers that don't support var()
+    pdf_html = _inline_css_vars(html)
+
+    try:
+        from weasyprint import HTML
+        return HTML(string=pdf_html).write_pdf()
+    except (ImportError, OSError):
+        import io
+        from xhtml2pdf import pisa
+
+        buf = io.BytesIO()
+        pisa_status = pisa.CreatePDF(pdf_html, dest=buf)
+        if pisa_status.err:
+            raise RuntimeError("xhtml2pdf failed to generate PDF")
+        buf.seek(0)
+        return buf.read()
+
+
+_CSS_VARS = {
+    "var(--primary)": "#0088ed",
+    "var(--dark)": "#1a1a2e",
+    "var(--chrome)": "#58544f",
+    "var(--bg)": "#ffffff",
+    "var(--bg-alt)": "#f8f9fa",
+    "var(--border)": "#e9ecef",
+    "var(--warning-bg)": "#fff3cd",
+    "var(--warning-text)": "#856404",
+    "var(--info-bg)": "#cce5ff",
+    "var(--info-text)": "#004085",
+    "var(--danger-bg)": "#f8d7da",
+    "var(--danger-text)": "#721c24",
+    "var(--success)": "#198754",
+}
+
+
+def _inline_css_vars(html: str) -> str:
+    for var_ref, value in _CSS_VARS.items():
+        html = html.replace(var_ref, value)
+    return html
 
 
 def _load_cleaning_report(session_id: str) -> CleaningReport | None:

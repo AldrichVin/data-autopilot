@@ -384,7 +384,7 @@
         {% for col in report.profile.columns %}
         <tr>
           <td><strong>{{ col.name }}</strong></td>
-          <td><span class="type-badge type-{{ col.inferred_type }}">{{ col.inferred_type }}</span></td>
+          <td><span class="type-badge type-{{ col.inferred_type | enum_val }}">{{ col.inferred_type | enum_val }}</span></td>
           <td>{{ "{:,}".format(col.null_count) }}</td>
           <td>{{ "%.1f"|format(col.null_pct) }}%</td>
           <td>{{ "{:,}".format(col.unique_count) }}</td>
@@ -444,7 +444,7 @@
     <div class="section-title">Visualizations</div>
     <div class="chart-grid">
       {% for chart in report.charts %}
-      <div class="chart-card{% if chart.chart_type == 'heatmap' %} chart-full{% endif %}">
+      <div class="chart-card{% if chart.chart_type | enum_val == 'heatmap' %} chart-full{% endif %}">
         <img src="data:image/png;base64,{{ chart.image_base64 }}" alt="{{ chart.title }}">
         <div class="chart-info">
           <div class="chart-title">{{ chart.title }}</div>
