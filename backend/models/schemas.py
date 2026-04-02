@@ -112,6 +112,7 @@ class ChartSpec(BaseModel):
     columns_used: list[str]
     vegalite_spec: Optional[dict] = None
     matplotlib_url: Optional[str] = None
+    plotly_spec: Optional[dict] = None
     description: str
 
 
@@ -160,6 +161,40 @@ class ReportSection(BaseModel):
     charts: list[ReportChart] = []
 
 
+class AnomalyResult(BaseModel):
+    method: str
+    n_anomalies: int
+    anomaly_pct: float
+    top_anomaly_columns: list[str] = []
+
+
+class ClusterResult(BaseModel):
+    optimal_k: int
+    silhouette_score: float
+    cluster_sizes: list[int] = []
+
+
+class PCAResult(BaseModel):
+    n_components_95: int
+    explained_variance: list[float] = []
+    top_loadings: dict[str, list[tuple[str, float]]] = {}
+
+
+class StatTestResult(BaseModel):
+    test_name: str
+    columns: list[str]
+    statistic: float
+    p_value: float
+    interpretation: str
+
+
+class StatisticalReport(BaseModel):
+    anomalies: Optional[AnomalyResult] = None
+    clusters: Optional[ClusterResult] = None
+    pca: Optional[PCAResult] = None
+    tests: list[StatTestResult] = []
+
+
 class ReportData(BaseModel):
     title: str
     generated_at: str
@@ -172,6 +207,7 @@ class ReportData(BaseModel):
     sections: list[ReportSection] = []
     executive_narrative: str = ""
     data_overview_narrative: str = ""
+    statistical_report: Optional[StatisticalReport] = None
 
 
 class ReportRequest(BaseModel):

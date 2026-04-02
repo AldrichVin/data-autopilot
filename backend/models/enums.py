@@ -24,6 +24,16 @@ class ChartType(str, Enum):
     BOX = "box"
     VIOLIN = "violin"
     MISSING_MATRIX = "missing_matrix"
+    TREEMAP = "treemap"
+    SUNBURST = "sunburst"
+    SANKEY = "sankey"
+    BUBBLE = "bubble"
+    PARALLEL_COORDS = "parallel_coords"
+    RADAR = "radar"
+    WATERFALL = "waterfall"
+    PCA_BIPLOT = "pca_biplot"
+    CLUSTER_SCATTER = "cluster_scatter"
+    ANOMALY_SCATTER = "anomaly_scatter"
 
 
 class SessionStatus(str, Enum):
