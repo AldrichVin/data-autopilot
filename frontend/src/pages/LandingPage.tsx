@@ -14,7 +14,7 @@ export default function LandingPage() {
   const videoContainerRef = useRef<HTMLDivElement>(null);
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a]">
+    <div className="min-h-screen bg-[#fafafa]">
       <NavBar />
       <HeroSection />
 
@@ -29,15 +29,15 @@ export default function LandingPage() {
       <FeaturesSection />
       <CTASection />
 
-      <footer className="relative z-10 border-t border-neutral-800/50 bg-[#0a0a0a] px-6 py-8">
+      <footer className="relative z-10 border-t border-neutral-200 bg-[#fafafa] px-6 py-8">
         <div className="mx-auto flex max-w-4xl items-center justify-between">
-          <span className="text-xs text-neutral-600">
+          <span className="text-xs text-neutral-300">
             Data Autopilot — built by{" "}
             <a
               href="https://github.com/AldrichVin"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-neutral-500 transition hover:text-white"
+              className="text-neutral-400 transition hover:text-neutral-900"
             >
               Aldrich Vincent
             </a>
@@ -46,7 +46,7 @@ export default function LandingPage() {
             href="https://github.com/AldrichVin/data-autopilot"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-xs text-neutral-600 transition hover:text-white"
+            className="text-xs text-neutral-300 transition hover:text-neutral-900"
           >
             GitHub
           </a>

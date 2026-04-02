@@ -75,7 +75,7 @@ function PhaseText({
         align === "center" ? "items-center text-center" : "items-start text-left"
       }`}
     >
-      <h3 className="max-w-2xl text-2xl font-semibold text-white sm:text-3xl lg:text-4xl">
+      <h3 className="max-w-2xl text-2xl font-semibold text-neutral-900 sm:text-3xl lg:text-4xl">
         {phase.title}
       </h3>
       {phase.subtitle && (

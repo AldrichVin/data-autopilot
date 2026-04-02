@@ -68,7 +68,8 @@ export default function ScrollVideo({
       >
         <source src={src} type="video/mp4" />
       </video>
-      <div className="absolute inset-0 bg-black/40" />
+      {/* Slight wash for text readability over white video */}
+      <div className="absolute inset-0 bg-white/30" />
     </div>
   );
 }

@@ -52,11 +52,11 @@ function FeatureRow({
         ease: [0.25, 0.1, 0.25, 1],
         delay: index * 0.06,
       }}
-      className="group grid grid-cols-[3rem_1fr] gap-x-6 border-t border-neutral-800/60 py-8 sm:grid-cols-[3rem_12rem_1fr]"
+      className="group grid grid-cols-[3rem_1fr] gap-x-6 border-t border-neutral-200 py-8 sm:grid-cols-[3rem_12rem_1fr]"
     >
-      <span className="text-sm tabular-nums text-neutral-600">{number}</span>
-      <h3 className="text-base font-semibold text-white">{title}</h3>
-      <p className="col-start-2 mt-2 text-sm leading-relaxed text-neutral-500 sm:col-start-3 sm:mt-0">
+      <span className="text-sm tabular-nums text-neutral-300">{number}</span>
+      <h3 className="text-base font-semibold text-neutral-900">{title}</h3>
+      <p className="col-start-2 mt-2 text-sm leading-relaxed text-neutral-400 sm:col-start-3 sm:mt-0">
         {description}
       </p>
     </motion.div>
@@ -68,7 +68,7 @@ export default function FeaturesSection() {
   const isInView = useInView(ref, { once: true, margin: "-60px" });
 
   return (
-    <section className="grain relative z-10 overflow-hidden bg-[#0a0a0a] px-6 py-32">
+    <section className="grain relative z-10 overflow-hidden bg-[#fafafa] px-6 py-32">
       <div className="mx-auto max-w-3xl">
         <motion.div
           ref={ref}
@@ -77,13 +77,13 @@ export default function FeaturesSection() {
           transition={{ duration: 0.5 }}
           className="mb-16"
         >
-          <p className="mb-3 text-xs font-medium tracking-[0.25em] text-neutral-500 uppercase">
+          <p className="mb-3 text-xs font-medium tracking-[0.25em] text-neutral-300 uppercase">
             What it does
           </p>
-          <h2 className="text-2xl font-bold text-white sm:text-3xl">
+          <h2 className="text-2xl font-bold text-neutral-900 sm:text-3xl">
             Everything your data needs,
             <br />
-            <span className="font-serif-accent italic font-normal text-neutral-300">
+            <span className="font-serif-accent italic font-normal text-neutral-400">
               nothing it doesn't.
             </span>
           </h2>
