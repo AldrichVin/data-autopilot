@@ -207,10 +207,20 @@ def _line(rec: ChartRecommendation, df: pd.DataFrame, ax: plt.Axes) -> None:
 def _heatmap(rec: ChartRecommendation, df: pd.DataFrame, ax: plt.Axes) -> None:
     numeric_df = df[rec.columns].apply(pd.to_numeric, errors="coerce")
     corr = numeric_df.corr()
+    n_cols = len(corr.columns)
+
+    # Scale figure size with column count for readability
+    fig_width = max(8, n_cols * 0.9)
+    fig_height = max(5.5, n_cols * 0.7)
+    ax.figure.set_size_inches(fig_width, fig_height)
+
+    # Reduce annotation font for large matrices
+    annot_fontsize = 10 if n_cols <= 8 else 8 if n_cols <= 12 else 6
+
     sns.heatmap(
         corr, annot=True, fmt=".2f", cmap="RdBu_r",
         center=0, vmin=-1, vmax=1, ax=ax, square=True,
-        linewidths=0.5, linecolor="white", annot_kws={"fontsize": 10},
+        linewidths=0.5, linecolor="white", annot_kws={"fontsize": annot_fontsize},
     )
 
 
