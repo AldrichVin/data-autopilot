@@ -211,23 +211,53 @@ def render_pdf(html: str) -> bytes:
 
 
 _CSS_VARS = {
-    "var(--primary)": "#2563eb",
-    "var(--dark)": "#1a1a2e",
-    "var(--text-secondary)": "#495057",
-    "var(--text-tertiary)": "#6c757d",
+    # Brand
+    "var(--accent)": "#1a56db",
+    "var(--accent-light)": "#e8eefb",
+    # Text hierarchy
+    "var(--text-primary)": "#1c1c1e",
+    "var(--text-body)": "#3a3a3c",
+    "var(--text-secondary)": "#636366",
+    "var(--text-tertiary)": "#8e8e93",
+    # Surfaces
     "var(--bg)": "#ffffff",
-    "var(--bg-alt)": "#f8f9fa",
-    "var(--bg-tertiary)": "#f1f3f5",
-    "var(--border)": "#e9ecef",
-    "var(--border-medium)": "#dee2e6",
-    "var(--warning-bg)": "#fff3cd",
-    "var(--warning-text)": "#856404",
-    "var(--info-bg)": "#cfe2ff",
-    "var(--info-text)": "#004085",
-    "var(--danger-bg)": "#f8d7da",
-    "var(--danger-text)": "#721c24",
-    "var(--success)": "#198754",
-    "var(--success-bg)": "#d1e7dd",
+    "var(--bg-alt)": "#fafafa",
+    "var(--bg-tertiary)": "#f2f2f7",
+    # Borders
+    "var(--border-light)": "#f0f0f0",
+    "var(--border)": "#e5e5ea",
+    "var(--border-medium)": "#d1d1d6",
+    "var(--rule)": "#c7c7cc",
+    # Semantic
+    "var(--success)": "#34a853",
+    "var(--success-bg)": "#e6f4ea",
+    "var(--warning-bg)": "#fef7e0",
+    "var(--warning-text)": "#7c6a0a",
+    "var(--info-bg)": "#e8eefb",
+    "var(--info-text)": "#1a56db",
+    "var(--danger-bg)": "#fce8e6",
+    "var(--danger-text)": "#c5221f",
+    # Spacing
+    "var(--space-xs)": "4px",
+    "var(--space-sm)": "8px",
+    "var(--space-md)": "16px",
+    "var(--space-lg)": "24px",
+    "var(--space-xl)": "40px",
+    "var(--space-2xl)": "64px",
+    "var(--space-3xl)": "80px",
+    # Typography scale
+    "var(--text-xs)": "11px",
+    "var(--text-sm)": "13px",
+    "var(--text-base)": "15px",
+    "var(--text-md)": "17px",
+    "var(--text-lg)": "20px",
+    "var(--text-xl)": "25px",
+    "var(--text-2xl)": "31px",
+    "var(--text-3xl)": "39px",
+    # Font stacks
+    "var(--font-heading)": '"Segoe UI", system-ui, -apple-system, "Helvetica Neue", sans-serif',
+    "var(--font-body)": '"Segoe UI", system-ui, -apple-system, "Helvetica Neue", sans-serif',
+    "var(--font-mono)": '"Cascadia Code", Consolas, "SF Mono", Menlo, monospace',
 }
 
 
