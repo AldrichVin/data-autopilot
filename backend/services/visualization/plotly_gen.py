@@ -97,69 +97,43 @@ def generate_plotly_base64(
 
 @_register(ChartType.TREEMAP)
 def _treemap(rec: ChartRecommendation, df: pd.DataFrame) -> go.Figure:
+    import plotly.express as px
+
     cat_cols = [c for c in rec.columns if df[c].dtype == "object" or str(df[c].dtype) == "category"]
     num_cols = [c for c in rec.columns if c not in cat_cols]
     value_col = num_cols[0] if num_cols else None
+    if len(cat_cols) < 1:
+        return go.Figure()
 
-    if len(cat_cols) >= 2:
-        parent_col, child_col = cat_cols[0], cat_cols[1]
-    else:
-        parent_col, child_col = cat_cols[0], cat_cols[0]
-
-    grouped = df.groupby(cat_cols).size().reset_index(name="count")
+    plot_df = df[cat_cols].dropna()
+    kwargs: dict = {"path": cat_cols}
     if value_col and value_col in df.columns:
-        agg = df.groupby(cat_cols)[value_col].sum().reset_index()
-        grouped = grouped.merge(agg, on=cat_cols, how="left")
-        values = grouped[value_col].fillna(1).tolist()
-    else:
-        values = grouped["count"].tolist()
+        plot_df = df[cat_cols + [value_col]].dropna()
+        kwargs["values"] = value_col
 
-    labels = grouped[cat_cols[-1]].tolist()
-    parents = grouped[cat_cols[0]].tolist() if len(cat_cols) >= 2 else [""] * len(labels)
-
-    # Build hierarchical structure
-    all_labels = list(set(parents)) + labels
-    all_parents = [""] * len(set(parents)) + parents
-    all_values = [0] * len(set(parents)) + values
-
-    fig = go.Figure(go.Treemap(
-        labels=all_labels,
-        parents=all_parents,
-        values=all_values,
-        marker=dict(colors=PALETTE * (len(all_labels) // len(PALETTE) + 1)),
-        textinfo="label+value+percent parent",
-    ))
+    fig = px.treemap(plot_df, **kwargs)
+    fig.update_traces(textinfo="label+value+percent parent")
     fig.update_layout(title=rec.title, **REPORT_LAYOUT)
     return fig
 
 
 @_register(ChartType.SUNBURST)
 def _sunburst(rec: ChartRecommendation, df: pd.DataFrame) -> go.Figure:
+    import plotly.express as px
+
     cat_cols = [c for c in rec.columns if df[c].dtype == "object" or str(df[c].dtype) == "category"]
     num_cols = [c for c in rec.columns if c not in cat_cols]
     value_col = num_cols[0] if num_cols else None
+    if len(cat_cols) < 1:
+        return go.Figure()
 
-    grouped = df.groupby(cat_cols).size().reset_index(name="count")
+    plot_df = df[cat_cols].dropna()
+    kwargs: dict = {"path": cat_cols}
     if value_col and value_col in df.columns:
-        agg = df.groupby(cat_cols)[value_col].sum().reset_index()
-        grouped = grouped.merge(agg, on=cat_cols, how="left")
-        values = grouped[value_col].fillna(1).tolist()
-    else:
-        values = grouped["count"].tolist()
+        plot_df = df[cat_cols + [value_col]].dropna()
+        kwargs["values"] = value_col
 
-    labels = grouped[cat_cols[-1]].tolist()
-    parents = grouped[cat_cols[0]].tolist() if len(cat_cols) >= 2 else [""] * len(labels)
-
-    all_labels = list(set(parents)) + labels
-    all_parents = [""] * len(set(parents)) + parents
-    all_values = [0] * len(set(parents)) + values
-
-    fig = go.Figure(go.Sunburst(
-        labels=all_labels,
-        parents=all_parents,
-        values=all_values,
-        marker=dict(colors=PALETTE * (len(all_labels) // len(PALETTE) + 1)),
-    ))
+    fig = px.sunburst(plot_df, **kwargs)
     fig.update_layout(title=rec.title, **REPORT_LAYOUT)
     return fig
 
