@@ -204,7 +204,8 @@ def derive_key_findings(
     # Column type breakdown
     type_counts: dict[str, int] = {}
     for c in profile.columns:
-        type_counts[c.inferred_type] = type_counts.get(c.inferred_type, 0) + 1
+        key = c.inferred_type.value if hasattr(c.inferred_type, "value") else str(c.inferred_type)
+        type_counts[key] = type_counts.get(key, 0) + 1
     breakdown = ", ".join(f"{v} {k}" for k, v in sorted(type_counts.items()))
     findings.append(f"Column types: {breakdown}")
 
