@@ -166,7 +166,7 @@ def _build_hierarchy(df: pd.DataFrame, cat_cols: list[str]) -> tuple:
         grouped = df.groupby(cols_at_depth).size().reset_index(name="_count")
 
         for _, row in grouped.iterrows():
-            node_id = "/".join(str(row[c]) for c in cols_at_depth)
+            node_id = " | ".join(str(row[c]) for c in cols_at_depth)
             if node_id in seen:
                 continue
             seen.add(node_id)
@@ -178,7 +178,7 @@ def _build_hierarchy(df: pd.DataFrame, cat_cols: list[str]) -> tuple:
             if depth == 0:
                 parents.append("")
             else:
-                parent_id = "/".join(str(row[c]) for c in cols_at_depth[:-1])
+                parent_id = " | ".join(str(row[c]) for c in cols_at_depth[:-1])
                 parents.append(parent_id)
 
     # Fix values: parent values must equal sum of children (for branchvalues="total")
