@@ -3,13 +3,22 @@ import uuid
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
 
-from models.enums import SessionStatus
+from models.enums import ChartType, SessionStatus
 from models.schemas import ChartSpec, VisualizeRequest, VisualizeResponse
 from services import file_manager
 from services.profiler import profile_dataframe
+from services.statistics import run_statistical_analysis
 from services.visualization.chart_selector import select_charts
 from services.visualization.matplotlib_gen import generate_matplotlib
+from services.visualization.plotly_gen import generate_plotly_json
 from services.visualization.vegalite_gen import generate_vegalite
+
+_PLOTLY_CHART_TYPES = {
+    ChartType.TREEMAP, ChartType.SUNBURST, ChartType.SANKEY,
+    ChartType.BUBBLE, ChartType.PARALLEL_COORDS, ChartType.RADAR,
+    ChartType.WATERFALL, ChartType.PCA_BIPLOT, ChartType.CLUSTER_SCATTER,
+    ChartType.ANOMALY_SCATTER,
+}
 
 router = APIRouter(prefix="/api/v1", tags=["visualize"])
 
@@ -28,7 +37,10 @@ async def visualize_data(request: VisualizeRequest):
     try:
         df = file_manager.load_cleaned_df(request.session_id)
         profile = profile_dataframe(df)
-        recommendations = select_charts(profile, df)
+
+        # Run statistical analysis for chart recommendations
+        stat_report = run_statistical_analysis(df, profile)
+        recommendations = select_charts(profile, df, stat_report)
 
         charts: list[ChartSpec] = []
         for rec in recommendations:
@@ -36,11 +48,15 @@ async def visualize_data(request: VisualizeRequest):
 
             vegalite_spec = None
             matplotlib_url = None
+            plotly_spec = None
+            is_plotly_type = rec.chart_type in _PLOTLY_CHART_TYPES
 
-            if "vegalite" in request.formats:
+            if is_plotly_type and "plotly" in request.formats:
+                plotly_spec = generate_plotly_json(rec, df)
+            elif "vegalite" in request.formats and not is_plotly_type:
                 vegalite_spec = generate_vegalite(rec, df)
 
-            if "matplotlib" in request.formats:
+            if "matplotlib" in request.formats and not is_plotly_type:
                 charts_dir = file_manager.charts_dir(request.session_id)
                 png_path = charts_dir / f"{chart_id}.png"
                 generate_matplotlib(rec, df, str(png_path))
@@ -56,6 +72,7 @@ async def visualize_data(request: VisualizeRequest):
                     columns_used=rec.columns,
                     vegalite_spec=vegalite_spec,
                     matplotlib_url=matplotlib_url,
+                    plotly_spec=plotly_spec,
                     description=rec.description,
                 )
             )

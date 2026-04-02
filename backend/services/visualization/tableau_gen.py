@@ -25,6 +25,10 @@ CHART_TEMPLATE_MAP = {
     ChartType.LINE: "worksheet_line.xml.j2",
     ChartType.HEATMAP: "worksheet_heatmap.xml.j2",
     ChartType.GROUPED_BAR: "worksheet_bar.xml.j2",
+    ChartType.BOX: "worksheet_bar.xml.j2",
+    ChartType.TREEMAP: "worksheet_treemap.xml.j2",
+    ChartType.BUBBLE: "worksheet_scatter.xml.j2",
+    ChartType.WATERFALL: "worksheet_bar.xml.j2",
 }
 
 
