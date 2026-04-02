@@ -21,6 +21,9 @@ class ChartType(str, Enum):
     LINE = "line"
     HEATMAP = "heatmap"
     GROUPED_BAR = "grouped_bar"
+    BOX = "box"
+    VIOLIN = "violin"
+    MISSING_MATRIX = "missing_matrix"
 
 
 class SessionStatus(str, Enum):

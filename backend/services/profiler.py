@@ -45,12 +45,19 @@ def _infer_column_type(series: pd.Series) -> ColumnType:
 
 def _compute_numeric_stats(series: pd.Series) -> NumericStats:
     clean = pd.to_numeric(series, errors="coerce").dropna()
+    q1 = float(clean.quantile(0.25)) if len(clean) > 0 else 0.0
+    q3 = float(clean.quantile(0.75)) if len(clean) > 0 else 0.0
     return NumericStats(
         mean=round(float(clean.mean()), 4),
         median=round(float(clean.median()), 4),
         min=round(float(clean.min()), 4),
         max=round(float(clean.max()), 4),
         std=round(float(clean.std()), 4) if len(clean) > 1 else 0.0,
+        skewness=round(float(clean.skew()), 4) if len(clean) > 2 else 0.0,
+        kurtosis=round(float(clean.kurtosis()), 4) if len(clean) > 3 else 0.0,
+        q1=round(q1, 4),
+        q3=round(q3, 4),
+        iqr=round(q3 - q1, 4),
     )
 
 

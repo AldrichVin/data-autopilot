@@ -22,6 +22,11 @@ class NumericStats(BaseModel):
     min: float
     max: float
     std: float
+    skewness: float = 0.0
+    kurtosis: float = 0.0
+    q1: float = 0.0
+    q3: float = 0.0
+    iqr: float = 0.0
 
 
 class ColumnProfile(BaseModel):
@@ -129,10 +134,15 @@ class StatusResponse(BaseModel):
 
 
 class Alert(BaseModel):
-    severity: str  # "warning" | "info" | "danger"
+    severity: str
     category: str
     message: str
     column: Optional[str] = None
+
+
+class SectionNarrative(BaseModel):
+    headline: str
+    body: str = ""
 
 
 class ReportChart(BaseModel):
@@ -140,6 +150,14 @@ class ReportChart(BaseModel):
     description: str
     chart_type: ChartType
     image_base64: str
+    annotation: str = ""
+
+
+class ReportSection(BaseModel):
+    id: str
+    title: str
+    narrative: Optional[SectionNarrative] = None
+    charts: list[ReportChart] = []
 
 
 class ReportData(BaseModel):
@@ -151,6 +169,9 @@ class ReportData(BaseModel):
     cleaning_report: Optional[CleaningReport] = None
     charts: list[ReportChart]
     key_findings: list[str]
+    sections: list[ReportSection] = []
+    executive_narrative: str = ""
+    data_overview_narrative: str = ""
 
 
 class ReportRequest(BaseModel):
@@ -166,3 +187,5 @@ class ChartRecommendation(BaseModel):
     columns: list[str]
     title: str
     description: str = ""
+    interestingness: float = 0.0
+    annotation: str = ""
