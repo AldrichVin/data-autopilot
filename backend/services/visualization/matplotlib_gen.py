@@ -209,18 +209,23 @@ def _heatmap(rec: ChartRecommendation, df: pd.DataFrame, ax: plt.Axes) -> None:
     corr = numeric_df.corr()
     n_cols = len(corr.columns)
 
-    # Scale figure size with column count for readability
-    fig_width = max(8, n_cols * 0.9)
+    # Scale figure size with column count — extra width for colorbar
+    fig_width = max(8, n_cols * 0.9 + 1.5)
     fig_height = max(5.5, n_cols * 0.7)
     ax.figure.set_size_inches(fig_width, fig_height)
 
     # Reduce annotation font for large matrices
     annot_fontsize = 10 if n_cols <= 8 else 8 if n_cols <= 12 else 6
 
+    # Don't force square for large matrices — it causes off-center layout
+    use_square = n_cols <= 8
+
     sns.heatmap(
         corr, annot=True, fmt=".2f", cmap="RdBu_r",
-        center=0, vmin=-1, vmax=1, ax=ax, square=True,
-        linewidths=0.5, linecolor="white", annot_kws={"fontsize": annot_fontsize},
+        center=0, vmin=-1, vmax=1, ax=ax, square=use_square,
+        linewidths=0.5, linecolor="white",
+        annot_kws={"fontsize": annot_fontsize},
+        cbar_kws={"shrink": 0.8, "pad": 0.02},
     )
 
 
