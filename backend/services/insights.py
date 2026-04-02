@@ -126,49 +126,89 @@ def derive_key_findings(
 ) -> list[str]:
     findings: list[str] = []
 
-    findings.append(
-        f"Dataset contains {profile.total_rows:,} rows and {profile.total_columns} columns"
-    )
+    # --- Correlation insights (actionable) ---
+    numeric_cols = [c.name for c in profile.columns if c.inferred_type == "numeric"]
+    if len(numeric_cols) >= 2:
+        numeric_df = df[numeric_cols].apply(pd.to_numeric, errors="coerce")
+        corr = numeric_df.corr()
+        strong_pairs = []
+        for i, col_a in enumerate(numeric_cols):
+            for col_b in numeric_cols[i + 1:]:
+                val = corr.loc[col_a, col_b]
+                if not np.isnan(val) and abs(val) >= 0.8:
+                    strong_pairs.append((col_a, col_b, float(val)))
+        strong_pairs.sort(key=lambda x: abs(x[2]), reverse=True)
 
-    total_cells = profile.total_rows * profile.total_columns
-    total_missing = sum(c.null_count for c in profile.columns)
-    completeness = (1 - total_missing / total_cells) * 100 if total_cells > 0 else 100
-    findings.append(f"Overall data completeness: {completeness:.1f}%")
+        if strong_pairs:
+            top = strong_pairs[0]
+            finding = f"'{top[0]}' and '{top[1]}' are strongly correlated (r={top[2]:.2f})"
+            if abs(top[2]) > 0.9:
+                finding += " — consider dropping one to reduce multicollinearity"
+            findings.append(finding)
+        if len(strong_pairs) > 1:
+            findings.append(
+                f"{len(strong_pairs)} highly correlated pairs detected — "
+                f"potential redundancy in the feature set"
+            )
 
-    if profile.duplicate_row_count > 0:
+    # --- Skewness summary ---
+    skewed_cols = [
+        c for c in profile.columns
+        if c.inferred_type == "numeric" and c.stats and abs(c.stats.skewness) > 1.5
+    ]
+    if skewed_cols:
+        names = ", ".join(c.name for c in skewed_cols[:3])
+        directions = [("right" if c.stats.skewness > 0 else "left") for c in skewed_cols[:3]]
         findings.append(
-            f"{profile.duplicate_row_count:,} duplicate rows detected "
-            f"({profile.duplicate_row_count / profile.total_rows * 100:.1f}%)"
+            f"Highly skewed columns: {names} ({'/'.join(directions)}-skewed). "
+            f"Consider log or Box-Cox transformation for modeling"
         )
 
-    corr_alerts = [a for a in alerts if a.category == "correlation"]
-    if corr_alerts:
-        findings.append(corr_alerts[0].message)
+    # --- Outlier summary ---
+    outlier_cols = []
+    for c in profile.columns:
+        if c.inferred_type == "numeric":
+            series = pd.to_numeric(df[c.name], errors="coerce").dropna()
+            if len(series) >= 4:
+                q1, q3 = series.quantile(0.25), series.quantile(0.75)
+                iqr = q3 - q1
+                if iqr > 0:
+                    n_outliers = int(((series < q1 - 1.5 * iqr) | (series > q3 + 1.5 * iqr)).sum())
+                    if n_outliers > 0:
+                        outlier_cols.append((c.name, n_outliers))
+    if outlier_cols:
+        outlier_cols.sort(key=lambda x: x[1], reverse=True)
+        worst = outlier_cols[0]
+        findings.append(
+            f"'{worst[0]}' has the most outliers ({worst[1]} records beyond 1.5× IQR)"
+            + (f" among {len(outlier_cols)} columns with outliers" if len(outlier_cols) > 1 else "")
+        )
 
+    # --- Missing data insight (only if noteworthy) ---
     missing_cols = sorted(
-        [c for c in profile.columns if c.null_pct > 0],
+        [c for c in profile.columns if c.null_pct > 5],
         key=lambda c: c.null_pct, reverse=True,
     )
     if missing_cols:
         worst = missing_cols[0]
-        findings.append(f"Column with most missing data: '{worst.name}' ({worst.null_pct:.1f}%)")
+        findings.append(
+            f"'{worst.name}' has {worst.null_pct:.1f}% missing values — "
+            f"investigate whether missingness is random or systematic"
+        )
 
-    type_counts: dict[str, int] = {}
-    for c in profile.columns:
-        key = c.inferred_type.value if hasattr(c.inferred_type, "value") else str(c.inferred_type)
-        type_counts[key] = type_counts.get(key, 0) + 1
-    breakdown = ", ".join(f"{v} {k}" for k, v in sorted(type_counts.items()))
-    findings.append(f"Column types: {breakdown}")
+    # --- Duplicate rows (only if significant) ---
+    if profile.duplicate_row_count > 0:
+        dup_pct = profile.duplicate_row_count / profile.total_rows * 100
+        if dup_pct > 1:
+            findings.append(
+                f"{profile.duplicate_row_count:,} duplicate rows ({dup_pct:.1f}%) — "
+                f"verify these are genuine records, not data collection errors"
+            )
 
-    warning_count = sum(1 for a in alerts if a.severity == "warning")
-    info_count = sum(1 for a in alerts if a.severity == "info")
-    if warning_count or info_count:
-        parts = []
-        if warning_count:
-            parts.append(f"{warning_count} warning{'s' if warning_count != 1 else ''}")
-        if info_count:
-            parts.append(f"{info_count} info alert{'s' if info_count != 1 else ''}")
-        findings.append(f"Data quality alerts: {', '.join(parts)}")
+    # --- Imbalanced categories ---
+    imbalanced = [a for a in alerts if a.category == "imbalanced"]
+    if imbalanced:
+        findings.append(imbalanced[0].message)
 
     return findings
 
@@ -184,30 +224,49 @@ def generate_executive_narrative(
     total_missing = sum(c.null_count for c in profile.columns)
     completeness = (1 - total_missing / total_cells) * 100 if total_cells > 0 else 100
 
-    type_counts: dict[str, int] = {}
-    for c in profile.columns:
-        key = c.inferred_type.value if hasattr(c.inferred_type, "value") else str(c.inferred_type)
-        type_counts[key] = type_counts.get(key, 0) + 1
+    numeric_cols = [c for c in profile.columns if c.inferred_type == "numeric"]
+    categorical_cols = [c for c in profile.columns if c.inferred_type == "categorical"]
 
     warnings = [a for a in alerts if a.severity in ("warning", "danger")]
-    quality_desc = "high" if completeness >= 95 and not warnings else "moderate" if completeness >= 80 else "low"
+    corr_alerts = [a for a in alerts if a.category == "correlation"]
+
+    # Lead with the most important analytical insight
+    insights = []
+
+    if corr_alerts:
+        insights.append(
+            f"Strong correlations detected between {len(corr_alerts)} variable pair"
+            f"{'s' if len(corr_alerts) != 1 else ''}, "
+            f"suggesting potential feature redundancy"
+        )
+
+    skewed = [c for c in numeric_cols if c.stats and abs(c.stats.skewness) > 1.5]
+    if skewed:
+        insights.append(
+            f"{len(skewed)} numeric variable{'s' if len(skewed) != 1 else ''} "
+            f"show{'s' if len(skewed) == 1 else ''} significant skew, "
+            f"which may affect model assumptions"
+        )
+
+    if warnings:
+        issue_types = list({a.category for a in warnings})
+        insights.append(
+            f"{len(warnings)} data quality warning{'s' if len(warnings) != 1 else ''} "
+            f"flagged in {', '.join(issue_types[:3])}"
+        )
 
     opening = (
-        f"This dataset comprises {profile.total_rows:,} records across "
-        f"{profile.total_columns} variables, achieving {completeness:.1f}% data completeness. "
+        f"Analysis of {profile.total_rows:,} records across "
+        f"{len(numeric_cols)} numeric and {len(categorical_cols)} categorical variables "
+        f"reveals a dataset with {completeness:.0f}% completeness. "
     )
 
-    if quality_desc == "high":
-        opening += "Overall data quality is strong, with minimal issues detected."
-    elif warnings:
-        issue_types = list({a.category for a in warnings})
-        opening += (
-            f"Data quality assessment identified {len(warnings)} warning"
-            f"{'s' if len(warnings) != 1 else ''}, "
-            f"primarily related to {', '.join(issue_types[:3])}."
-        )
+    if insights:
+        opening += " ".join(f"{s}." for s in insights[:2])
+    elif completeness >= 95:
+        opening += "The data is well-structured with no major quality concerns."
     else:
-        opening += "The dataset is largely clean with a few informational observations."
+        opening += "Some data quality issues warrant attention before analysis."
 
     return opening
 
@@ -256,39 +315,104 @@ def generate_section_narrative(
     if section_key == "distributions":
         numeric_cols = [c for c in profile.columns if c.inferred_type == "numeric"]
         skewed = [c for c in numeric_cols if c.stats and abs(c.stats.skewness) > 1.0]
-        headline = (
-            f"Analysis of {chart_count} distribution"
-            f"{'s' if chart_count != 1 else ''} reveals the shape and spread of key variables."
+        symmetric = [c for c in numeric_cols if c.stats and abs(c.stats.skewness) <= 1.0]
+
+        headline_parts = []
+        if skewed:
+            names = ", ".join(c.name for c in skewed[:3])
+            directions = []
+            for c in skewed[:3]:
+                d = "right" if c.stats.skewness > 0 else "left"
+                directions.append(f"{c.name} ({d})")
+            headline_parts.append(f"Skewed variables: {', '.join(directions)}")
+        if symmetric and len(symmetric) <= 5:
+            headline_parts.append(
+                f"{', '.join(c.name for c in symmetric[:3])} are approximately normally distributed"
+            )
+
+        headline = ". ".join(headline_parts) + "." if headline_parts else (
+            f"{chart_count} distributions examined across key variables."
         )
         body = ""
         if skewed:
-            names = ", ".join(c.name for c in skewed[:3])
-            body = f"Notable skewness was detected in {names}, which may warrant transformation for modeling."
+            body = (
+                f"{len(skewed)} of {len(numeric_cols)} numeric variables show notable skewness. "
+                f"Skewed distributions can bias mean-based statistics — "
+                f"consider median for summary and log/Box-Cox transforms for modeling."
+            )
         return SectionNarrative(headline=headline, body=body)
 
     if section_key == "relationships":
+        # Compute actual correlation info
+        numeric_cols = [c.name for c in profile.columns if c.inferred_type == "numeric"]
+        strong_count = 0
+        top_pair_str = ""
+        if len(numeric_cols) >= 2:
+            numeric_df = df[numeric_cols].apply(pd.to_numeric, errors="coerce")
+            corr = numeric_df.corr()
+            pairs = []
+            for i, a in enumerate(numeric_cols):
+                for b in numeric_cols[i + 1:]:
+                    val = corr.loc[a, b]
+                    if not np.isnan(val) and abs(val) >= 0.7:
+                        strong_count += 1
+                        pairs.append((a, b, val))
+            if pairs:
+                pairs.sort(key=lambda x: abs(x[2]), reverse=True)
+                top = pairs[0]
+                top_pair_str = f"Strongest: {top[0]} and {top[1]} (r={top[2]:.2f}). "
+
         headline = (
-            f"{chart_count} relationship visualization"
-            f"{'s' if chart_count != 1 else ''} highlight correlations and dependencies between variables."
+            f"{top_pair_str}"
+            f"{strong_count} strong correlation{'s' if strong_count != 1 else ''} found "
+            f"across {len(numeric_cols)} numeric variables."
+            if strong_count > 0 else
+            f"Relationship analysis across {len(numeric_cols)} numeric variables."
         )
-        return SectionNarrative(headline=headline, body="Strong correlations may indicate redundant features or causal relationships worth investigating.")
+        body = (
+            "Strong positive correlations suggest variables that move together — "
+            "these may be redundant for predictive models. "
+            "Negative correlations reveal inverse relationships worth investigating."
+        )
+        return SectionNarrative(headline=headline, body=body)
 
     if section_key == "temporal":
         headline = "Temporal analysis tracks how key metrics evolve over time."
-        return SectionNarrative(headline=headline, body="Look for trends, seasonality, or anomalous periods that may require attention.")
+        body = "Look for trends, seasonality, or anomalous periods that may require attention."
+        return SectionNarrative(headline=headline, body=body)
 
     if section_key == "data_quality":
-        headline = "Data quality visualizations expose patterns in missing or problematic values."
-        return SectionNarrative(headline=headline, body="Systematic patterns in missing data can reveal data collection issues.")
+        missing_cols = [c for c in profile.columns if c.null_pct > 1]
+        if missing_cols:
+            worst = max(missing_cols, key=lambda c: c.null_pct)
+            headline = (
+                f"{len(missing_cols)} columns have >1% missing data. "
+                f"'{worst.name}' is most affected at {worst.null_pct:.1f}%."
+            )
+        else:
+            headline = "Data quality visualizations expose patterns in missing or problematic values."
+        body = "Systematic patterns in missing data can reveal data collection issues rather than random gaps."
+        return SectionNarrative(headline=headline, body=body)
 
     if section_key == "statistical_analysis":
+        techniques = []
+        for chart in charts:
+            ct = chart.chart_type.value if hasattr(chart.chart_type, "value") else str(chart.chart_type)
+            if "pca" in ct.lower():
+                techniques.append("dimensionality reduction (PCA)")
+            elif "cluster" in ct.lower():
+                techniques.append("clustering")
+            elif "anomaly" in ct.lower():
+                techniques.append("anomaly detection")
+        technique_str = ", ".join(techniques) if techniques else "machine learning techniques"
+
         headline = (
-            f"Advanced statistical analysis reveals hidden structure in the data "
-            f"through {chart_count} visualization{'s' if chart_count != 1 else ''}."
+            f"Statistical analysis using {technique_str} reveals "
+            f"hidden structure not visible in basic charts."
         )
         body = (
-            "Machine learning techniques including PCA, clustering, and anomaly detection "
-            "uncover patterns not visible in univariate or bivariate analysis."
+            "These analyses look at all numeric variables simultaneously to find "
+            "natural groupings, unusual records, and the most important dimensions of variation."
         )
         return SectionNarrative(headline=headline, body=body)
 
@@ -307,44 +431,50 @@ def generate_statistical_findings(
 
     if stat_report.clusters:
         c = stat_report.clusters
-        findings.append(
-            f"{c.optimal_k} natural clusters detected in the data "
-            f"(silhouette score: {c.silhouette_score:.2f})"
+        quality = (
+            "well-defined" if c.silhouette_score > 0.5
+            else "moderately distinct" if c.silhouette_score > 0.25
+            else "weakly separated"
         )
+        finding = f"{c.optimal_k} {quality} natural groupings detected in the data"
+        if c.cluster_sizes:
+            finding += f" (largest group: {max(c.cluster_sizes)} records, smallest: {min(c.cluster_sizes)})"
+        findings.append(finding)
 
     if stat_report.pca:
         p = stat_report.pca
-        findings.append(
-            f"PCA: {p.n_components_95} component{'s' if p.n_components_95 != 1 else ''} "
-            f"explain 95% of variance"
+        n = p.n_components_95
+        total_vars = len(p.explained_variance) if p.explained_variance else 0
+        finding = (
+            f"Data complexity can be reduced: {n} principal component"
+            f"{'s' if n != 1 else ''} capture 95% of variance"
         )
+        if total_vars > 0:
+            finding += f" (out of {total_vars} original variables)"
+        findings.append(finding)
 
     if stat_report.anomalies:
         a = stat_report.anomalies
-        findings.append(
-            f"{a.n_anomalies} anomalous records identified ({a.anomaly_pct}% of data)"
+        finding = (
+            f"{a.n_anomalies} statistically unusual records ({a.anomaly_pct}%) identified — "
+            f"investigate for data errors or genuine exceptions"
         )
         if a.top_anomaly_columns:
-            findings.append(
-                f"Top anomaly-contributing columns: {', '.join(a.top_anomaly_columns[:3])}"
-            )
-
-    non_normal = [
-        t for t in stat_report.tests
-        if t.test_name == "Shapiro-Wilk" and t.p_value < 0.05
-    ]
-    if non_normal:
-        names = ", ".join(t.columns[0] for t in non_normal[:3])
-        findings.append(f"Non-normal distributions detected: {names}")
+            finding += f". Most affected columns: {', '.join(a.top_anomaly_columns[:3])}"
+        findings.append(finding)
 
     significant_assoc = [
         t for t in stat_report.tests
         if t.test_name == "Chi-square" and t.p_value < 0.05
     ]
     if significant_assoc:
+        cols_involved = []
+        for t in significant_assoc[:2]:
+            cols_involved.extend(t.columns)
         findings.append(
             f"{len(significant_assoc)} significant categorical association"
-            f"{'s' if len(significant_assoc) != 1 else ''} found"
+            f"{'s' if len(significant_assoc) != 1 else ''} found "
+            f"(e.g. {', '.join(cols_involved[:4])})"
         )
 
     return findings
