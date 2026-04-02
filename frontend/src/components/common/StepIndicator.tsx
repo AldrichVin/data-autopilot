@@ -42,17 +42,17 @@ export default function StepIndicator({ status }: StepIndicatorProps) {
             <div
               className={`flex h-8 items-center gap-2 rounded-full px-4 text-sm font-medium transition ${
                 s === "done"
-                  ? "bg-green-500/20 text-green-400"
+                  ? "bg-neutral-900 text-white"
                   : s === "active"
-                    ? "bg-blue-500/20 text-blue-400"
-                    : "bg-white/5 text-neutral-500"
+                    ? "border border-neutral-900 text-neutral-900"
+                    : "bg-neutral-100 text-neutral-400"
               }`}
             >
-              {s === "done" ? "+" : s === "active" ? "..." : " "}
+              {s === "done" ? "\u2713" : s === "active" ? "..." : " "}
               <span className="ml-1">{step.label}</span>
             </div>
             {i < STEPS.length - 1 && (
-              <div className="h-px w-8 bg-white/10" />
+              <div className="h-px w-8 bg-neutral-300" />
             )}
           </div>
         );

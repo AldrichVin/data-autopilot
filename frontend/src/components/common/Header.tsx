@@ -1,27 +1,24 @@
+import { Link } from "react-router-dom";
+
 interface HeaderProps {
   onReset: () => void;
 }
 
 export default function Header({ onReset }: HeaderProps) {
   return (
-    <header className="border-b border-white/10 bg-[#0a0a0a]">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
+    <header className="border-b border-neutral-200 bg-[#fafafa]">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
         <button onClick={onReset} className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-lg bg-blue-500 flex items-center justify-center text-white font-bold text-sm">
-            DA
-          </div>
-          <span className="text-lg font-semibold text-white">
+          <span className="text-xs font-medium tracking-[0.15em] text-neutral-400 uppercase transition hover:text-neutral-900">
             Data Autopilot
           </span>
         </button>
-        <a
-          href="https://github.com/AldrichVin/data-autopilot"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-sm text-neutral-400 hover:text-white transition"
+        <Link
+          to="/"
+          className="border border-neutral-300 px-4 py-1.5 text-xs font-medium text-neutral-600 transition hover:border-neutral-900 hover:text-neutral-900"
         >
-          GitHub
-        </a>
+          Home
+        </Link>
       </div>
     </header>
   );

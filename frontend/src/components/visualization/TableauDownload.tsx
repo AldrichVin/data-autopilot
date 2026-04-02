@@ -10,11 +10,11 @@ export default function TableauDownload({
   tableauUrl,
 }: TableauDownloadProps) {
   return (
-    <div className="rounded-xl bg-white/5 p-6">
-      <h2 className="mb-4 text-lg font-semibold text-white">Downloads</h2>
+    <div>
+      <h2 className="mb-4 text-lg font-semibold text-neutral-900">Downloads</h2>
 
       {/* Reports */}
-      <h3 className="mb-3 text-sm font-medium uppercase tracking-wide text-neutral-400">
+      <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-neutral-400">
         Reports
       </h3>
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -22,18 +22,18 @@ export default function TableauDownload({
           title="HTML Report"
           description="Self-contained interactive report with charts, alerts, and findings"
           href={getExportUrl(sessionId, "report_html")}
-          accent="blue"
+          primary
         />
         <DownloadCard
           title="PDF Report"
           description="Print-ready professional report document"
           href={getExportUrl(sessionId, "report_pdf")}
-          accent="blue"
+          primary
         />
       </div>
 
       {/* Data & Assets */}
-      <h3 className="mb-3 text-sm font-medium uppercase tracking-wide text-neutral-400">
+      <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-neutral-400">
         Data &amp; Assets
       </h3>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -63,25 +63,24 @@ function DownloadCard({
   title,
   description,
   href,
-  accent,
+  primary,
 }: {
   title: string;
   description: string;
   href: string;
-  accent?: string;
+  primary?: boolean;
 }) {
-  const borderClass =
-    accent === "blue"
-      ? "border border-blue-500/30 hover:border-blue-500/60"
-      : "border border-transparent";
-
   return (
     <a
       href={href}
       download
-      className={`block rounded-lg bg-white/5 p-4 transition hover:bg-white/10 ${borderClass}`}
+      className={`block rounded-lg border p-4 transition hover:bg-neutral-50 ${
+        primary
+          ? "border-neutral-900"
+          : "border-neutral-200"
+      }`}
     >
-      <div className="font-medium text-white">{title}</div>
+      <div className="font-medium text-neutral-900">{title}</div>
       <div className="mt-1 text-xs text-neutral-400">{description}</div>
     </a>
   );

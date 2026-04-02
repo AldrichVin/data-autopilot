@@ -8,16 +8,16 @@ export default function PreviewTable({ rows }: PreviewTableProps) {
   const columns = Object.keys(rows[0]);
 
   return (
-    <div className="rounded-xl bg-white/5 p-6">
-      <h3 className="mb-4 text-sm font-semibold text-neutral-400">
+    <div>
+      <h3 className="mb-4 text-xs font-semibold uppercase tracking-wide text-neutral-400">
         Preview (first {rows.length} rows)
       </h3>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-white/10 text-left text-neutral-400">
+            <tr className="border-b-2 border-neutral-900 text-left">
               {columns.map((col) => (
-                <th key={col} className="pb-2 pr-4 whitespace-nowrap">
+                <th key={col} className="pb-2 pr-4 text-xs font-semibold uppercase tracking-wide text-neutral-400 whitespace-nowrap">
                   {col}
                 </th>
               ))}
@@ -25,11 +25,11 @@ export default function PreviewTable({ rows }: PreviewTableProps) {
           </thead>
           <tbody>
             {rows.map((row, i) => (
-              <tr key={i} className="border-b border-white/5">
+              <tr key={i} className="border-b border-neutral-100 hover:bg-neutral-50">
                 {columns.map((col) => (
                   <td
                     key={col}
-                    className="py-1.5 pr-4 text-neutral-300 whitespace-nowrap"
+                    className="py-1.5 pr-4 text-neutral-600 whitespace-nowrap"
                   >
                     {String(row[col] ?? "")}
                   </td>

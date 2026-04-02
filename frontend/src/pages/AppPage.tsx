@@ -56,13 +56,13 @@ export default function AppPage() {
     status !== "idle" && status !== "uploading" && uploadResult;
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a]">
+    <div className="min-h-screen bg-[#fafafa]">
       <Header onReset={handleReset} />
-      <main className="mx-auto max-w-7xl px-4 py-8">
+      <main className="mx-auto max-w-5xl px-6 py-8">
         <StepIndicator status={status} />
 
         {error && (
-          <div className="mb-6 rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-red-300">
+          <div className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
             {error}
           </div>
         )}

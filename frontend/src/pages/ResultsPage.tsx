@@ -39,23 +39,23 @@ export default function ResultsPage({
 
   return (
     <div>
-      <div className="mb-6 flex gap-2 border-b border-white/10 pb-2">
+      <div className="mb-6 flex gap-1 border-b border-neutral-200 pb-0">
         {tabs.map((t) => (
           <button
             key={t.key}
             onClick={() => t.ready && setTab(t.key)}
             disabled={!t.ready}
-            className={`rounded-t-lg px-4 py-2 text-sm font-medium transition ${
+            className={`px-4 py-2.5 text-sm font-medium transition ${
               tab === t.key
-                ? "bg-white/10 text-white"
+                ? "border-b-2 border-neutral-900 text-neutral-900"
                 : t.ready
-                  ? "text-neutral-400 hover:text-white"
-                  : "cursor-not-allowed text-neutral-600"
+                  ? "text-neutral-400 hover:text-neutral-900"
+                  : "cursor-not-allowed text-neutral-300"
             }`}
           >
             {t.label}
             {!t.ready && status !== "complete" && status !== "error" && (
-              <span className="ml-2 text-xs text-blue-400">...</span>
+              <span className="ml-2 text-xs text-neutral-400">...</span>
             )}
           </button>
         ))}
@@ -78,13 +78,21 @@ export default function ResultsPage({
             <span className="text-sm text-neutral-400">View as:</span>
             <button
               onClick={() => setVizMode("vegalite")}
-              className={`rounded px-3 py-1 text-sm ${vizMode === "vegalite" ? "bg-blue-500 text-white" : "bg-white/5 text-neutral-400"}`}
+              className={`rounded-full px-3 py-1 text-sm font-medium transition ${
+                vizMode === "vegalite"
+                  ? "bg-neutral-900 text-white"
+                  : "border border-neutral-300 text-neutral-500 hover:border-neutral-900"
+              }`}
             >
               Interactive (Vega-Lite)
             </button>
             <button
               onClick={() => setVizMode("matplotlib")}
-              className={`rounded px-3 py-1 text-sm ${vizMode === "matplotlib" ? "bg-blue-500 text-white" : "bg-white/5 text-neutral-400"}`}
+              className={`rounded-full px-3 py-1 text-sm font-medium transition ${
+                vizMode === "matplotlib"
+                  ? "bg-neutral-900 text-white"
+                  : "border border-neutral-300 text-neutral-500 hover:border-neutral-900"
+              }`}
             >
               Static (Matplotlib)
             </button>

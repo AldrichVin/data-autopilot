@@ -13,13 +13,13 @@ export default function VegaChart({ spec }: VegaChartProps) {
     background: "transparent",
     config: {
       axis: {
-        labelColor: "#a3a3a3",
-        titleColor: "#e5e5e5",
-        gridColor: "#262626",
-        domainColor: "#404040",
+        labelColor: "#636366",
+        titleColor: "#1c1c1e",
+        gridColor: "#f0f0f0",
+        domainColor: "#e5e5ea",
       },
-      legend: { labelColor: "#a3a3a3", titleColor: "#e5e5e5" },
-      title: { color: "#e5e5e5" },
+      legend: { labelColor: "#636366", titleColor: "#1c1c1e" },
+      title: { color: "#1c1c1e" },
       view: { stroke: "transparent" },
     },
   };

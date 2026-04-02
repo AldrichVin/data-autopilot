@@ -31,7 +31,9 @@ export default function HomePage({ onUpload, isLoading }: HomePageProps) {
   return (
     <div className="mx-auto max-w-2xl">
       <div className="mb-8 text-center">
-        <h1 className="mb-2 text-4xl font-bold text-white">Data Autopilot</h1>
+        <h1 className="mb-2 text-3xl font-bold text-neutral-900">
+          Upload your dataset
+        </h1>
         <p className="text-neutral-400">
           Drop a CSV. Get cleaned data, interactive charts, and a Tableau
           workbook — automatically.
@@ -40,28 +42,28 @@ export default function HomePage({ onUpload, isLoading }: HomePageProps) {
 
       <div
         {...getRootProps()}
-        className={`mb-6 cursor-pointer rounded-xl border-2 border-dashed p-12 text-center transition ${
+        className={`mb-6 cursor-pointer rounded-lg border-2 border-dashed p-12 text-center transition ${
           isDragActive
-            ? "border-blue-400 bg-blue-500/10"
+            ? "border-neutral-900 bg-neutral-100"
             : file
-              ? "border-green-500/50 bg-green-500/5"
-              : "border-white/20 bg-white/5 hover:border-white/40"
+              ? "border-neutral-900 bg-neutral-50"
+              : "border-neutral-300 bg-white hover:border-neutral-400"
         }`}
       >
         <input {...getInputProps()} />
         {file ? (
           <div>
-            <p className="text-lg text-green-400">{file.name}</p>
-            <p className="mt-1 text-sm text-neutral-500">
+            <p className="text-lg font-medium text-neutral-900">{file.name}</p>
+            <p className="mt-1 text-sm text-neutral-400">
               {(file.size / 1024).toFixed(1)} KB — click or drop to replace
             </p>
           </div>
         ) : (
           <div>
-            <p className="text-lg text-neutral-300">
+            <p className="text-lg text-neutral-500">
               {isDragActive ? "Drop your CSV here" : "Drag & drop a CSV file"}
             </p>
-            <p className="mt-1 text-sm text-neutral-500">
+            <p className="mt-1 text-sm text-neutral-400">
               or click to browse (max 50 MB)
             </p>
           </div>
@@ -72,20 +74,20 @@ export default function HomePage({ onUpload, isLoading }: HomePageProps) {
         <span className="text-sm text-neutral-400">Engine:</span>
         <button
           onClick={() => setEngine("python")}
-          className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
+          className={`rounded-full px-4 py-2 text-sm font-medium transition ${
             engine === "python"
-              ? "bg-blue-500 text-white"
-              : "bg-white/5 text-neutral-400 hover:bg-white/10"
+              ? "bg-neutral-900 text-white"
+              : "border border-neutral-300 text-neutral-500 hover:border-neutral-900 hover:text-neutral-900"
           }`}
         >
           Python (Pandas)
         </button>
         <button
           onClick={() => setEngine("r")}
-          className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
+          className={`rounded-full px-4 py-2 text-sm font-medium transition ${
             engine === "r"
-              ? "bg-blue-500 text-white"
-              : "bg-white/5 text-neutral-400 hover:bg-white/10"
+              ? "bg-neutral-900 text-white"
+              : "border border-neutral-300 text-neutral-500 hover:border-neutral-900 hover:text-neutral-900"
           }`}
         >
           R (tidyverse)
@@ -96,7 +98,7 @@ export default function HomePage({ onUpload, isLoading }: HomePageProps) {
         <button
           onClick={handleSubmit}
           disabled={!file || isLoading}
-          className="rounded-xl bg-blue-500 px-8 py-3 text-lg font-semibold text-white transition hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-40"
+          className="rounded-full bg-neutral-900 px-8 py-2.5 text-sm font-semibold text-white transition hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-40"
         >
           {isLoading ? "Processing..." : "Analyze & Clean"}
         </button>

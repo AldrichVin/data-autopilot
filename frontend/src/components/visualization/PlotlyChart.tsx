@@ -13,27 +13,27 @@ export default function PlotlyChart({ spec }: PlotlyChartProps) {
     const renderChart = async () => {
       const Plotly = await import("plotly.js-dist-min");
 
-      const darkLayout = {
+      const lightLayout = {
         ...(spec.layout as Record<string, unknown> ?? {}),
         paper_bgcolor: "transparent",
-        plot_bgcolor: "transparent",
-        font: { color: "#a3a3a3", family: "Inter, sans-serif" },
+        plot_bgcolor: "#ffffff",
+        font: { color: "#3a3a3c", family: "'DM Sans', system-ui, sans-serif", size: 12 },
         xaxis: {
           ...((spec.layout as Record<string, unknown>)?.xaxis as Record<string, unknown> ?? {}),
-          gridcolor: "#262626",
-          linecolor: "#404040",
-          tickfont: { color: "#a3a3a3" },
-          titlefont: { color: "#e5e5e5" },
+          gridcolor: "#f0f0f0",
+          linecolor: "#e5e5ea",
+          tickfont: { color: "#636366" },
+          titlefont: { color: "#1c1c1e" },
         },
         yaxis: {
           ...((spec.layout as Record<string, unknown>)?.yaxis as Record<string, unknown> ?? {}),
-          gridcolor: "#262626",
-          linecolor: "#404040",
-          tickfont: { color: "#a3a3a3" },
-          titlefont: { color: "#e5e5e5" },
+          gridcolor: "#f0f0f0",
+          linecolor: "#e5e5ea",
+          tickfont: { color: "#636366" },
+          titlefont: { color: "#1c1c1e" },
         },
         legend: {
-          font: { color: "#a3a3a3" },
+          font: { color: "#636366" },
         },
         margin: { l: 50, r: 20, t: 40, b: 50 },
       };
@@ -46,7 +46,7 @@ export default function PlotlyChart({ spec }: PlotlyChartProps) {
       Plotly.default.newPlot(
         containerRef.current!,
         spec.data as Plotly.Data[],
-        darkLayout as Partial<Plotly.Layout>,
+        lightLayout as Partial<Plotly.Layout>,
         config,
       );
     };
@@ -62,5 +62,5 @@ export default function PlotlyChart({ spec }: PlotlyChartProps) {
     };
   }, [spec]);
 
-  return <div ref={containerRef} className="w-full min-h-[300px]" />;
+  return <div ref={containerRef} className="w-full min-h-[300px] rounded-lg border border-neutral-200" />;
 }
