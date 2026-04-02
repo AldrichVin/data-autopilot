@@ -6,71 +6,126 @@
 <title>{{ report.title }}</title>
 <style>
   :root {
-    --primary: #0088ed;
+    --primary: #2563eb;
     --dark: #1a1a2e;
-    --chrome: #58544f;
+    --text-secondary: #495057;
+    --text-tertiary: #6c757d;
     --bg: #ffffff;
     --bg-alt: #f8f9fa;
+    --bg-tertiary: #f1f3f5;
     --border: #e9ecef;
+    --border-medium: #dee2e6;
+    --success: #198754;
+    --success-bg: #d1e7dd;
     --warning-bg: #fff3cd;
     --warning-text: #856404;
-    --info-bg: #cce5ff;
+    --info-bg: #cfe2ff;
     --info-text: #004085;
     --danger-bg: #f8d7da;
     --danger-text: #721c24;
-    --success: #198754;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
   body {
     font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
-    color: var(--chrome);
+    color: var(--dark);
     background: var(--bg);
     line-height: 1.6;
-    font-size: 14px;
+    font-size: 16px;
   }
 
   .container {
-    max-width: 1000px;
+    max-width: 860px;
     margin: 0 auto;
-    padding: 0 24px;
+    padding: 0 32px;
   }
 
-  /* Header */
+  /* ── Header ── */
   .report-header {
-    background: linear-gradient(135deg, var(--dark) 0%, #16213e 100%);
+    background: var(--dark);
     color: white;
-    padding: 48px 0 36px;
-    margin-bottom: 32px;
+    padding: 56px 0 48px;
+    margin-bottom: 40px;
   }
   .report-header h1 {
-    font-size: 28px;
+    font-size: 32px;
     font-weight: 700;
-    margin-bottom: 8px;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    margin-bottom: 16px;
   }
-  .report-header .meta {
+  .meta-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .badge {
+    display: inline-block;
+    padding: 4px 12px;
+    background: rgba(255,255,255,0.12);
+    border-radius: 20px;
     font-size: 13px;
-    opacity: 0.7;
+    font-weight: 500;
+    letter-spacing: 0.01em;
   }
-  .report-header .meta span + span { margin-left: 20px; }
 
-  /* Section headings */
-  .section { margin-bottom: 40px; }
+  /* ── Sections ── */
+  .section { margin-bottom: 56px; }
   .section-title {
-    font-size: 20px;
+    font-size: 24px;
     font-weight: 700;
     color: var(--dark);
-    margin-bottom: 16px;
-    padding-bottom: 8px;
-    border-bottom: 2px solid var(--primary);
-    display: inline-block;
+    letter-spacing: -0.01em;
+    margin-bottom: 8px;
+    line-height: 1.3;
   }
+  .section-narrative {
+    font-size: 16px;
+    line-height: 1.7;
+    color: var(--text-secondary);
+    margin-bottom: 24px;
+    max-width: 680px;
+  }
+  .section-narrative strong { color: var(--dark); }
 
-  /* Stat cards */
+  /* ── Table of Contents ── */
+  .toc {
+    margin-bottom: 48px;
+    padding: 24px;
+    background: var(--bg-alt);
+    border-radius: 8px;
+  }
+  .toc-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    margin-bottom: 12px;
+  }
+  .toc-list {
+    list-style: none;
+    padding: 0;
+    columns: 2;
+    column-gap: 24px;
+  }
+  .toc-list li {
+    padding: 5px 0;
+    break-inside: avoid;
+  }
+  .toc-list a {
+    color: var(--primary);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .toc-list a:hover { text-decoration: underline; }
+
+  /* ── Stat cards ── */
   .stat-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
     gap: 16px;
     margin-bottom: 24px;
   }
@@ -78,78 +133,68 @@
     background: var(--bg-alt);
     border: 1px solid var(--border);
     border-radius: 8px;
-    padding: 16px;
-    text-align: center;
+    padding: 20px 24px;
+    text-align: left;
   }
   .stat-card .value {
-    font-size: 28px;
+    font-size: 36px;
     font-weight: 700;
     color: var(--dark);
+    line-height: 1.1;
+    font-feature-settings: "tnum";
   }
   .stat-card .label {
-    font-size: 12px;
+    font-size: 11px;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.05em;
     margin-top: 4px;
-    color: var(--chrome);
+    color: var(--text-tertiary);
+    font-weight: 600;
   }
 
-  /* Key findings */
+  /* ── Findings list ── */
   .findings-list {
     list-style: none;
     padding: 0;
   }
   .findings-list li {
     padding: 10px 16px;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     background: var(--bg-alt);
     border-left: 3px solid var(--primary);
     border-radius: 0 6px 6px 0;
-    font-size: 14px;
+    font-size: 15px;
+    color: var(--text-secondary);
+    line-height: 1.5;
   }
 
-  /* Alerts */
+  /* ── Alerts ── */
+  .alert-group-title {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin: 20px 0 8px;
+    color: var(--text-tertiary);
+  }
   .alert {
     padding: 12px 16px;
     border-radius: 6px;
-    margin-bottom: 8px;
-    font-size: 13px;
-    border: 1px solid transparent;
+    margin-bottom: 6px;
+    font-size: 14px;
+    border-left: 4px solid transparent;
+    line-height: 1.5;
   }
-  .alert-warning {
-    background: var(--warning-bg);
-    color: var(--warning-text);
-    border-color: #ffc107;
-  }
-  .alert-info {
-    background: var(--info-bg);
-    color: var(--info-text);
-    border-color: #b8daff;
-  }
-  .alert-danger {
-    background: var(--danger-bg);
-    color: var(--danger-text);
-    border-color: #f5c6cb;
-  }
-  .alert-badge {
-    display: inline-block;
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    padding: 2px 8px;
-    border-radius: 4px;
-    margin-right: 8px;
-  }
-  .alert-warning .alert-badge { background: #ffc107; color: #212529; }
-  .alert-info .alert-badge { background: #0088ed; color: white; }
-  .alert-danger .alert-badge { background: #dc3545; color: white; }
+  .alert-warning { background: var(--warning-bg); color: var(--warning-text); border-left-color: #ffc107; }
+  .alert-info    { background: var(--info-bg);    color: var(--info-text);    border-left-color: var(--primary); }
+  .alert-danger  { background: var(--danger-bg);  color: var(--danger-text);  border-left-color: #dc3545; }
 
-  /* Column profile table */
+  /* ── Profile table ── */
   .profile-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 13px;
+    font-size: 14px;
+    font-feature-settings: "tnum";
   }
   .profile-table th {
     background: var(--dark);
@@ -157,17 +202,16 @@
     padding: 10px 12px;
     text-align: left;
     font-weight: 600;
-    font-size: 12px;
+    font-size: 11px;
     text-transform: uppercase;
-    letter-spacing: 0.3px;
+    letter-spacing: 0.04em;
   }
   .profile-table td {
     padding: 8px 12px;
     border-bottom: 1px solid var(--border);
+    color: var(--text-secondary);
   }
-  .profile-table tr:nth-child(even) td {
-    background: var(--bg-alt);
-  }
+  .profile-table tr:nth-child(even) td { background: var(--bg-alt); }
   .type-badge {
     display: inline-block;
     padding: 2px 8px;
@@ -175,41 +219,40 @@
     font-size: 11px;
     font-weight: 600;
   }
-  .type-numeric { background: #dbeafe; color: #1d4ed8; }
+  .type-numeric     { background: #dbeafe; color: #1d4ed8; }
   .type-categorical { background: #fce7f3; color: #be185d; }
-  .type-datetime { background: #d1fae5; color: #065f46; }
-  .type-text { background: #fef3c7; color: #92400e; }
-  .type-boolean { background: #ede9fe; color: #5b21b6; }
+  .type-datetime    { background: #d1fae5; color: #065f46; }
+  .type-text        { background: #fef3c7; color: #92400e; }
+  .type-boolean     { background: #ede9fe; color: #5b21b6; }
 
-  /* Cleaning report */
+  /* ── Cleaning ── */
   .cleaning-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 16px;
-    margin-bottom: 20px;
+    margin-bottom: 24px;
   }
   .shape-card {
     background: var(--bg-alt);
     border: 1px solid var(--border);
     border-radius: 8px;
-    padding: 16px;
+    padding: 20px;
     text-align: center;
   }
-  .shape-card.after {
-    border-color: var(--success);
-    background: #f0fdf4;
-  }
+  .shape-card.after { border-color: var(--success); background: var(--success-bg); }
   .shape-card .shape-label {
-    font-size: 12px;
+    font-size: 11px;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: var(--chrome);
+    letter-spacing: 0.05em;
+    color: var(--text-tertiary);
+    font-weight: 600;
   }
   .shape-card .shape-value {
     font-size: 20px;
     font-weight: 700;
     color: var(--dark);
     margin-top: 4px;
+    font-feature-settings: "tnum";
   }
   .step-list { list-style: none; padding: 0; }
   .step-item {
@@ -221,8 +264,7 @@
   }
   .step-number {
     flex-shrink: 0;
-    width: 28px;
-    height: 28px;
+    width: 28px; height: 28px;
     background: var(--primary);
     color: white;
     border-radius: 50%;
@@ -233,20 +275,11 @@
     font-weight: 700;
   }
   .step-content { flex: 1; }
-  .step-name {
-    font-weight: 600;
-    color: var(--dark);
-    text-transform: capitalize;
-  }
-  .step-desc { font-size: 13px; color: var(--chrome); }
-  .step-affected {
-    font-size: 12px;
-    color: var(--primary);
-    font-weight: 600;
-    margin-top: 2px;
-  }
+  .step-name { font-weight: 600; color: var(--dark); text-transform: capitalize; }
+  .step-desc { font-size: 14px; color: var(--text-secondary); }
+  .step-affected { font-size: 12px; color: var(--primary); font-weight: 600; margin-top: 2px; }
 
-  /* Chart grid */
+  /* ── Chart grid ── */
   .chart-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -257,73 +290,103 @@
     border-radius: 8px;
     overflow: hidden;
     background: white;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
   }
   .chart-card img {
     width: 100%;
     height: auto;
     display: block;
   }
-  .chart-card .chart-info {
-    padding: 12px 16px;
-    border-top: 1px solid var(--border);
+  .chart-info {
+    padding: 16px 20px;
   }
-  .chart-card .chart-title {
+  .chart-title {
     font-weight: 600;
     color: var(--dark);
-    font-size: 14px;
+    font-size: 15px;
+    line-height: 1.3;
   }
-  .chart-card .chart-desc {
-    font-size: 12px;
-    color: var(--chrome);
+  .chart-desc {
+    font-size: 13px;
+    color: var(--text-tertiary);
     margin-top: 4px;
+    line-height: 1.4;
+  }
+  .chart-annotation {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    padding-top: 10px;
+    margin-top: 10px;
+    border-top: 1px solid var(--border);
   }
   .chart-full { grid-column: 1 / -1; }
 
-  /* Footer */
+  /* ── Footer ── */
   .report-footer {
-    margin-top: 48px;
+    margin-top: 56px;
     padding: 24px 0;
     border-top: 1px solid var(--border);
     text-align: center;
     font-size: 12px;
-    color: #adb5bd;
+    color: var(--text-tertiary);
   }
 
-  /* Print styles */
+  /* ── Print ── */
   @media print {
-    body { font-size: 12px; }
+    body { font-size: 13px; }
     .report-header { padding: 24px 0 20px; }
     .section { page-break-inside: avoid; }
     .chart-card { break-inside: avoid; }
-    .chart-grid { grid-template-columns: 1fr 1fr; gap: 16px; }
+    .toc { display: none; }
   }
 
   @media (max-width: 700px) {
     .chart-grid { grid-template-columns: 1fr; }
     .cleaning-grid { grid-template-columns: 1fr; }
     .stat-grid { grid-template-columns: repeat(2, 1fr); }
+    .toc-list { columns: 1; }
   }
 </style>
 </head>
 <body>
 
-<!-- Header -->
+<!-- ── Header ── -->
 <div class="report-header">
   <div class="container">
     <h1>{{ report.title }}</h1>
-    <div class="meta">
-      <span>Dataset: {{ report.dataset_filename }}</span>
-      <span>Generated: {{ report.generated_at }}</span>
+    <div class="meta-badges">
+      <span class="badge">{{ report.dataset_filename }}</span>
+      <span class="badge">{{ "{:,}".format(report.profile.total_rows) }} rows</span>
+      <span class="badge">{{ report.profile.total_columns }} columns</span>
+      <span class="badge">{{ report.generated_at }}</span>
     </div>
   </div>
 </div>
 
 <div class="container">
 
-  <!-- 1. Executive Summary -->
-  <div class="section">
-    <div class="section-title">Executive Summary</div>
+  <!-- ── Table of Contents ── -->
+  <nav class="toc">
+    <div class="toc-label">Contents</div>
+    <ol class="toc-list">
+      <li><a href="#executive-summary">Executive Summary</a></li>
+      <li><a href="#data-overview">Data Overview</a></li>
+      {% if report.alerts %}<li><a href="#data-quality-alerts">Data Quality Alerts</a></li>{% endif %}
+      {% for section in report.sections %}
+      <li><a href="#{{ section.id }}">{{ section.title }}</a></li>
+      {% endfor %}
+      {% if report.cleaning_report %}<li><a href="#cleaning">Cleaning Impact</a></li>{% endif %}
+      <li><a href="#appendix">Appendix: Column Profiles</a></li>
+    </ol>
+  </nav>
+
+  <!-- ── 1. Executive Summary ── -->
+  <div class="section" id="executive-summary">
+    <h2 class="section-title">Executive Summary</h2>
+    {% if report.executive_narrative %}
+    <p class="section-narrative">{{ report.executive_narrative }}</p>
+    {% endif %}
 
     <div class="stat-grid">
       <div class="stat-card">
@@ -340,7 +403,7 @@
       </div>
       <div class="stat-card">
         <div class="value">{{ report.alerts | length }}</div>
-        <div class="label">Alerts</div>
+        <div class="label">Quality Alerts</div>
       </div>
     </div>
 
@@ -353,52 +416,104 @@
     {% endif %}
   </div>
 
-  <!-- 2. Data Quality Alerts -->
-  {% if report.alerts %}
-  <div class="section">
-    <div class="section-title">Data Quality Alerts</div>
-    {% for alert in report.alerts %}
-    <div class="alert alert-{{ alert.severity }}">
-      <span class="alert-badge">{{ alert.category }}</span>
-      {{ alert.message }}
+  <!-- ── 2. Data Overview ── -->
+  <div class="section" id="data-overview">
+    <h2 class="section-title">Data Overview</h2>
+    {% if report.data_overview_narrative %}
+    <p class="section-narrative">{{ report.data_overview_narrative }}</p>
+    {% endif %}
+
+    <div class="stat-grid">
+      {% set ns = namespace(numeric=0, categorical=0, datetime=0, text=0, boolean=0) %}
+      {% for col in report.profile.columns %}
+        {% if col.inferred_type | enum_val == 'numeric' %}{% set ns.numeric = ns.numeric + 1 %}
+        {% elif col.inferred_type | enum_val == 'categorical' %}{% set ns.categorical = ns.categorical + 1 %}
+        {% elif col.inferred_type | enum_val == 'datetime' %}{% set ns.datetime = ns.datetime + 1 %}
+        {% elif col.inferred_type | enum_val == 'text' %}{% set ns.text = ns.text + 1 %}
+        {% elif col.inferred_type | enum_val == 'boolean' %}{% set ns.boolean = ns.boolean + 1 %}
+        {% endif %}
+      {% endfor %}
+      {% if ns.numeric %}<div class="stat-card"><div class="value">{{ ns.numeric }}</div><div class="label">Numeric</div></div>{% endif %}
+      {% if ns.categorical %}<div class="stat-card"><div class="value">{{ ns.categorical }}</div><div class="label">Categorical</div></div>{% endif %}
+      {% if ns.datetime %}<div class="stat-card"><div class="value">{{ ns.datetime }}</div><div class="label">Datetime</div></div>{% endif %}
+      {% if ns.text %}<div class="stat-card"><div class="value">{{ ns.text }}</div><div class="label">Text</div></div>{% endif %}
+      {% if ns.boolean %}<div class="stat-card"><div class="value">{{ ns.boolean }}</div><div class="label">Boolean</div></div>{% endif %}
     </div>
+  </div>
+
+  <!-- ── 3. Data Quality Alerts ── -->
+  {% if report.alerts %}
+  <div class="section" id="data-quality-alerts">
+    <h2 class="section-title">Data Quality Alerts</h2>
+    <p class="section-narrative">
+      {{ report.alerts | length }} alert{{ 's' if report.alerts | length != 1 else '' }}
+      detected across the dataset. Issues are grouped by severity below.
+    </p>
+
+    {% set warnings = report.alerts | selectattr('severity', 'equalto', 'warning') | list %}
+    {% set infos = report.alerts | selectattr('severity', 'equalto', 'info') | list %}
+    {% set dangers = report.alerts | selectattr('severity', 'equalto', 'danger') | list %}
+
+    {% if dangers %}
+    <div class="alert-group-title">Critical ({{ dangers | length }})</div>
+    {% for alert in dangers %}
+    <div class="alert alert-danger">{{ alert.message }}</div>
     {% endfor %}
+    {% endif %}
+
+    {% if warnings %}
+    <div class="alert-group-title">Warnings ({{ warnings | length }})</div>
+    {% for alert in warnings %}
+    <div class="alert alert-warning">{{ alert.message }}</div>
+    {% endfor %}
+    {% endif %}
+
+    {% if infos %}
+    <div class="alert-group-title">Informational ({{ infos | length }})</div>
+    {% for alert in infos %}
+    <div class="alert alert-info">{{ alert.message }}</div>
+    {% endfor %}
+    {% endif %}
   </div>
   {% endif %}
 
-  <!-- 3. Column Profiles -->
-  <div class="section">
-    <div class="section-title">Column Profiles</div>
-    <table class="profile-table">
-      <thead>
-        <tr>
-          <th>Column</th>
-          <th>Type</th>
-          <th>Nulls</th>
-          <th>Null %</th>
-          <th>Unique</th>
-          <th>Sample Values</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for col in report.profile.columns %}
-        <tr>
-          <td><strong>{{ col.name }}</strong></td>
-          <td><span class="type-badge type-{{ col.inferred_type | enum_val }}">{{ col.inferred_type | enum_val }}</span></td>
-          <td>{{ "{:,}".format(col.null_count) }}</td>
-          <td>{{ "%.1f"|format(col.null_pct) }}%</td>
-          <td>{{ "{:,}".format(col.unique_count) }}</td>
-          <td style="font-size: 12px;">{{ col.sample_values[:3] | join(", ") }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
+  <!-- ── 4. Thematic Chart Sections ── -->
+  {% for section in report.sections %}
+  <div class="section" id="{{ section.id }}">
+    <h2 class="section-title">{{ section.title }}</h2>
+    {% if section.narrative %}
+    <p class="section-narrative">
+      {{ section.narrative.headline }}
+      {% if section.narrative.body %} {{ section.narrative.body }}{% endif %}
+    </p>
+    {% endif %}
 
-  <!-- 4. Cleaning Summary -->
+    <div class="chart-grid">
+      {% for chart in section.charts %}
+      <div class="chart-card{% if chart.chart_type | enum_val in ['heatmap', 'missing_matrix'] %} chart-full{% endif %}">
+        <img src="data:image/png;base64,{{ chart.image_base64 }}" alt="{{ chart.title }}">
+        <div class="chart-info">
+          <div class="chart-title">{{ chart.title }}</div>
+          <div class="chart-desc">{{ chart.description }}</div>
+          {% if chart.annotation %}
+          <div class="chart-annotation">{{ chart.annotation }}</div>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+
+  <!-- ── 5. Cleaning Impact ── -->
   {% if report.cleaning_report %}
-  <div class="section">
-    <div class="section-title">Cleaning Summary</div>
+  <div class="section" id="cleaning">
+    <h2 class="section-title">Cleaning Impact</h2>
+    <p class="section-narrative">
+      The automated cleaning pipeline processed the dataset in
+      {{ "{:,}".format(report.cleaning_report.duration_ms) }}ms,
+      applying {{ report.cleaning_report.steps | length }} transformation steps.
+    </p>
 
     <div class="cleaning-grid">
       <div class="shape-card">
@@ -431,34 +546,43 @@
       </li>
       {% endfor %}
     </ol>
-
-    <p style="font-size: 12px; color: #adb5bd; margin-top: 12px;">
-      Completed in {{ "{:,}".format(report.cleaning_report.duration_ms) }}ms
-    </p>
   </div>
   {% endif %}
 
-  <!-- 5. Visualizations -->
-  {% if report.charts %}
-  <div class="section">
-    <div class="section-title">Visualizations</div>
-    <div class="chart-grid">
-      {% for chart in report.charts %}
-      <div class="chart-card{% if chart.chart_type | enum_val == 'heatmap' %} chart-full{% endif %}">
-        <img src="data:image/png;base64,{{ chart.image_base64 }}" alt="{{ chart.title }}">
-        <div class="chart-info">
-          <div class="chart-title">{{ chart.title }}</div>
-          <div class="chart-desc">{{ chart.description }}</div>
-        </div>
-      </div>
-      {% endfor %}
-    </div>
+  <!-- ── 6. Appendix: Column Profiles ── -->
+  <div class="section" id="appendix">
+    <h2 class="section-title">Appendix: Column Profiles</h2>
+    <p class="section-narrative">Detailed metadata for each column in the dataset.</p>
+
+    <table class="profile-table">
+      <thead>
+        <tr>
+          <th>Column</th>
+          <th>Type</th>
+          <th>Nulls</th>
+          <th>Null %</th>
+          <th>Unique</th>
+          <th>Sample Values</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for col in report.profile.columns %}
+        <tr>
+          <td><strong>{{ col.name }}</strong></td>
+          <td><span class="type-badge type-{{ col.inferred_type | enum_val }}">{{ col.inferred_type | enum_val }}</span></td>
+          <td>{{ "{:,}".format(col.null_count) }}</td>
+          <td>{{ "%.1f"|format(col.null_pct) }}%</td>
+          <td>{{ "{:,}".format(col.unique_count) }}</td>
+          <td style="font-size: 12px; color: var(--text-tertiary);">{{ col.sample_values[:3] | join(", ") }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
-  {% endif %}
 
 </div>
 
-<!-- Footer -->
+<!-- ── Footer ── -->
 <div class="report-footer">
   <div class="container">
     Generated by <strong>Data Autopilot</strong> &mdash; Automated Data Analysis Platform
