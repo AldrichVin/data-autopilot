@@ -11,7 +11,7 @@ interface ChartGridProps {
   sessionId: string;
 }
 
-export default function ChartGrid({ charts, mode, sessionId }: ChartGridProps) {
+export default function ChartGrid({ charts, mode, sessionId: _sessionId }: ChartGridProps) {
   return (
     <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
       {charts.map((chart) => (
