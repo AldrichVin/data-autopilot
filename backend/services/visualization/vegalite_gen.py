@@ -6,7 +6,7 @@ from models.schemas import ChartRecommendation
 
 alt.data_transformers.disable_max_rows()
 
-PALETTE = ["#0088ed", "#ff7721", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2", "#17becf"]
+PALETTE = ["#2563eb", "#7c3aed", "#0891b2", "#059669", "#d97706", "#dc2626", "#4f46e5", "#0284c7"]
 
 _GENERATORS: dict[ChartType, object] = {}
 
@@ -226,3 +226,77 @@ def _grouped_bar(rec: ChartRecommendation, df: pd.DataFrame) -> alt.LayerChart:
     )
 
     return (bars + text).properties(title=rec.title, width=400, height=300)
+
+
+@_register(ChartType.BOX)
+def _box_plot(rec: ChartRecommendation, df: pd.DataFrame) -> alt.Chart:
+    if len(rec.columns) == 2:
+        cat_col, num_col = rec.columns[0], rec.columns[1]
+        return (
+            alt.Chart(df)
+            .mark_boxplot(extent=1.5)
+            .encode(
+                alt.X(cat_col, type="nominal", title=cat_col),
+                alt.Y(num_col, type="quantitative", title=num_col),
+                alt.Color(
+                    cat_col, type="nominal", legend=None,
+                    scale=alt.Scale(range=PALETTE),
+                ),
+                tooltip=[cat_col, alt.Tooltip(num_col, format=",.2f")],
+            )
+            .properties(title=rec.title, width=400, height=300)
+        )
+
+    col = rec.columns[0]
+    return (
+        alt.Chart(df)
+        .mark_boxplot(extent=1.5, color=PALETTE[0])
+        .encode(
+            alt.Y(col, type="quantitative", title=col),
+            tooltip=[alt.Tooltip(col, format=",.2f")],
+        )
+        .properties(title=rec.title, width=200, height=300)
+    )
+
+
+@_register(ChartType.VIOLIN)
+def _violin_plot(rec: ChartRecommendation, df: pd.DataFrame) -> alt.Chart:
+    col = rec.columns[0]
+    return (
+        alt.Chart(df)
+        .transform_density(col, as_=[col, "density"])
+        .mark_area(orient="horizontal", color=PALETTE[0], opacity=0.7)
+        .encode(
+            alt.X("density:Q", title="Density"),
+            alt.Y(f"{col}:Q", title=col),
+            tooltip=[alt.Tooltip(col, format=",.2f")],
+        )
+        .properties(title=rec.title, width=300, height=300)
+    )
+
+
+@_register(ChartType.MISSING_MATRIX)
+def _missing_matrix(rec: ChartRecommendation, df: pd.DataFrame) -> alt.Chart:
+    cols = [c for c in rec.columns if c in df.columns]
+    if not cols:
+        return alt.Chart(pd.DataFrame()).mark_text().encode()
+
+    sample = df[cols].head(200)
+    missing = sample.isnull().astype(int).reset_index().melt(id_vars="index")
+    missing.columns = ["Row", "Column", "Missing"]
+
+    return (
+        alt.Chart(missing)
+        .mark_rect()
+        .encode(
+            alt.X("Column:N", title=""),
+            alt.Y("Row:O", title="Row", axis=None),
+            alt.Color(
+                "Missing:Q",
+                scale=alt.Scale(domain=[0, 1], range=["#e9ecef", "#2563eb"]),
+                legend=alt.Legend(title="Missing"),
+            ),
+            tooltip=["Row", "Column", "Missing"],
+        )
+        .properties(title=rec.title, width=400, height=300)
+    )
