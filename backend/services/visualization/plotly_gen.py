@@ -104,43 +104,35 @@ def generate_plotly_base64(
 
 @_register(ChartType.TREEMAP)
 def _treemap(rec: ChartRecommendation, df: pd.DataFrame) -> go.Figure:
-    import plotly.express as px
-
     cat_cols = [c for c in rec.columns if df[c].dtype == "object" or str(df[c].dtype) == "category"]
-    num_cols = [c for c in rec.columns if c not in cat_cols]
-    value_col = num_cols[0] if num_cols else None
     if len(cat_cols) < 1:
         return go.Figure()
 
     plot_df = df[cat_cols].dropna()
-    kwargs: dict = {"path": cat_cols}
-    if value_col and value_col in df.columns:
-        plot_df = df[cat_cols + [value_col]].dropna()
-        kwargs["values"] = value_col
+    ids, labels, parents, values = _build_hierarchy(plot_df, cat_cols)
 
-    fig = px.treemap(plot_df, **kwargs)
-    fig.update_traces(textinfo="label+value+percent parent")
+    fig = go.Figure(go.Treemap(
+        ids=ids, labels=labels, parents=parents, values=values,
+        branchvalues="total",
+        textinfo="label+value+percent parent",
+    ))
     fig.update_layout(title=rec.title, **REPORT_LAYOUT)
     return fig
 
 
 @_register(ChartType.SUNBURST)
 def _sunburst(rec: ChartRecommendation, df: pd.DataFrame) -> go.Figure:
-    import plotly.express as px
-
     cat_cols = [c for c in rec.columns if df[c].dtype == "object" or str(df[c].dtype) == "category"]
-    num_cols = [c for c in rec.columns if c not in cat_cols]
-    value_col = num_cols[0] if num_cols else None
     if len(cat_cols) < 1:
         return go.Figure()
 
     plot_df = df[cat_cols].dropna()
-    kwargs: dict = {"path": cat_cols}
-    if value_col and value_col in df.columns:
-        plot_df = df[cat_cols + [value_col]].dropna()
-        kwargs["values"] = value_col
+    ids, labels, parents, values = _build_hierarchy(plot_df, cat_cols)
 
-    fig = px.sunburst(plot_df, **kwargs)
+    fig = go.Figure(go.Sunburst(
+        ids=ids, labels=labels, parents=parents, values=values,
+        branchvalues="total",
+    ))
     fig.update_layout(title=rec.title, **REPORT_LAYOUT)
     return fig
 
