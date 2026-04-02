@@ -227,7 +227,6 @@
   .findings-list {
     list-style: none;
     padding: 0;
-    counter-reset: findings;
   }
   .findings-list li {
     padding: var(--space-md) 0;
@@ -240,11 +239,9 @@
     font-size: var(--text-base);
     color: var(--text-body);
     line-height: 1.65;
-    counter-increment: findings;
     position: relative;
   }
-  .findings-list li::before {
-    content: counter(findings);
+  .finding-number {
     position: absolute;
     left: 0;
     top: var(--space-md);
@@ -252,6 +249,8 @@
     font-weight: 600;
     color: var(--text-tertiary);
     font-feature-settings: "tnum";
+    display: inline-block;
+    min-width: 20px;
   }
   .findings-list li:last-child { border-bottom: none; }
 
@@ -426,6 +425,17 @@
   }
 
   /* ── Print ── */
+  @page {
+    size: A4;
+    margin: 0.75in 0.75in 1in 0.75in;
+    @bottom-right {
+      content: counter(page);
+      font-size: 9px;
+      color: #8e8e93;
+      font-family: "Segoe UI", system-ui, sans-serif;
+    }
+  }
+
   @media print {
     :root {
       --text-primary: #000000;
@@ -460,8 +470,10 @@
 
     .toc-list a { color: #1a1a1a; }
 
+    /* Let sections flow across pages — avoid was causing one-chart-per-page */
     .section {
-      page-break-inside: avoid;
+      page-break-inside: auto;
+      margin-bottom: 24px;
     }
 
     .section-title {
@@ -469,22 +481,67 @@
       font-size: 18px;
     }
 
+    /* Flatten grid to CSS columns for print — much better pagination in WeasyPrint */
+    .chart-grid {
+      display: block;
+      columns: 2;
+      column-gap: 16px;
+      orphans: 1;
+      widows: 1;
+    }
+
     .chart-card {
       break-inside: avoid;
       page-break-inside: avoid;
+      margin-bottom: 16px;
+      display: inline-block;
+      width: 100%;
     }
 
-    .chart-card img { border: none; }
+    .chart-card img {
+      border: none;
+      max-width: 100%;
+      width: 100%;
+      height: auto;
+    }
 
-    .chart-grid { gap: 16px; }
+    /* Full-width charts span both columns */
+    .chart-full {
+      column-span: all;
+      width: 100%;
+    }
+
+    /* Keep caption with its chart image */
+    .chart-info {
+      break-before: avoid;
+    }
+
+    /* Keep stat cards together on one page */
+    .stat-grid {
+      page-break-inside: avoid;
+    }
 
     .stat-card { border-top: 1px solid #000; }
+    .stat-card .value { color: #000; }
+
+    /* Allow findings to split across pages */
+    .findings-list {
+      page-break-inside: auto;
+    }
+    .findings-list li { border-bottom-color: #ddd; }
 
     .profile-table th { border-bottom: 1.5px solid #000; }
 
     .profile-table td {
       font-size: 10px;
       padding: 4px 8px;
+    }
+
+    /* Constrain interpretation column in stat test table */
+    .profile-table td:last-child {
+      max-width: 200px;
+      font-size: 9px;
+      line-height: 1.3;
     }
 
     .profile-table tr:hover td { background: none; }
@@ -501,9 +558,9 @@
       color: #1a1a1a;
     }
 
-    .stat-card .value { color: #000; }
-
-    .findings-list li { border-bottom-color: #ddd; }
+    .cleaning-grid {
+      page-break-inside: avoid;
+    }
   }
 
   @media (max-width: 700px) {
@@ -576,7 +633,7 @@
     {% if report.key_findings %}
     <ul class="findings-list">
       {% for finding in report.key_findings %}
-      <li>{{ finding }}</li>
+      <li><span class="finding-number">{{ loop.index }}</span>{{ finding }}</li>
       {% endfor %}
     </ul>
     {% endif %}
