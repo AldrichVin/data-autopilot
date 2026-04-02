@@ -10,7 +10,7 @@ from services.profiler import profile_dataframe
 from services.statistics import run_statistical_analysis
 from services.visualization.chart_selector import select_charts
 from services.visualization.matplotlib_gen import generate_matplotlib
-from services.visualization.plotly_gen import generate_plotly_json
+from services.visualization.plotly_gen import generate_plotly_json, STATIC_ONLY_CHARTS
 from services.visualization.vegalite_gen import generate_vegalite
 
 _PLOTLY_CHART_TYPES = {
@@ -51,7 +51,7 @@ async def visualize_data(request: VisualizeRequest):
             plotly_spec = None
             is_plotly_type = rec.chart_type in _PLOTLY_CHART_TYPES
 
-            if is_plotly_type and "plotly" in request.formats:
+            if is_plotly_type and "plotly" in request.formats and rec.chart_type not in STATIC_ONLY_CHARTS:
                 plotly_spec = generate_plotly_json(rec, df)
             elif "vegalite" in request.formats and not is_plotly_type:
                 vegalite_spec = generate_vegalite(rec, df)

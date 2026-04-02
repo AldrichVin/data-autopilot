@@ -51,11 +51,18 @@ def generate_plotly_json(
     rec: ChartRecommendation, df: pd.DataFrame,
 ) -> dict:
     """Return Plotly JSON spec for frontend rendering."""
+    import json
+
     generator = _GENERATORS.get(rec.chart_type)
     if not generator:
         return {}
     fig = generator(rec, df)
-    return fig.to_dict()
+    # JSON round-trip to convert numpy arrays to plain Python types
+    return json.loads(fig.to_json())
+
+
+# Charts that only render reliably as static images (not interactive frontend)
+STATIC_ONLY_CHARTS = {ChartType.SUNBURST, ChartType.TREEMAP}
 
 
 def generate_plotly_base64(
