@@ -5,826 +5,1102 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{{ report.title }}</title>
 <style>
-  :root {
-    /* ── Brand ── */
-    --accent: #1a56db;
-    --accent-light: #e8eefb;
+/* ═══════════════════════════════════════════════════════════════════
+   DATA AUTOPILOT — Report Design System
+   Inspired by Apple HIG, Stripe Docs, Linear changelogs
+   8pt grid · 1.25 modular scale · warm slate palette
+   ═══════════════════════════════════════════════════════════════════ */
 
-    /* ── Text hierarchy (warm grays, no blue cast) ── */
-    --text-primary: #1c1c1e;
-    --text-body: #3a3a3c;
-    --text-secondary: #636366;
-    --text-tertiary: #8e8e93;
+:root {
+  /* ── Brand ── */
+  --accent:       #0066FF;
+  --accent-muted: #4D94FF;
+  --accent-subtle: #EBF3FF;
 
-    /* ── Surfaces ── */
-    --bg: #ffffff;
-    --bg-alt: #fafafa;
-    --bg-tertiary: #f2f2f7;
+  /* ── Text hierarchy (warm slate, never pure gray) ── */
+  --text-primary:   #1D1D1F;
+  --text-secondary: #48484A;
+  --text-tertiary:  #86868B;
+  --text-caption:   #AEAEB2;
 
-    /* ── Borders ── */
-    --border-light: #f0f0f0;
-    --border: #e5e5ea;
-    --border-medium: #d1d1d6;
-    --rule: #c7c7cc;
+  /* ── Surfaces ── */
+  --bg:          #FFFFFF;
+  --bg-elevated: #F5F5F7;
+  --bg-inset:    #FAFAFA;
 
-    /* ── Semantic (muted) ── */
-    --success: #34a853;
-    --success-bg: #e6f4ea;
-    --warning-bg: #fef7e0;
-    --warning-text: #7c6a0a;
-    --info-bg: #e8eefb;
-    --info-text: #1a56db;
-    --danger-bg: #fce8e6;
-    --danger-text: #c5221f;
+  /* ── Borders ── */
+  --border:       #E8E8ED;
+  --border-light: #F2F2F7;
 
-    /* ── Spacing (8px grid) ── */
-    --space-xs: 4px;
-    --space-sm: 8px;
-    --space-md: 16px;
-    --space-lg: 24px;
-    --space-xl: 40px;
-    --space-2xl: 64px;
-    --space-3xl: 80px;
+  /* ── Semantic ── */
+  --success:     #34C759;
+  --success-bg:  #F0FFF4;
+  --warning:     #FF9500;
+  --warning-bg:  #FFFBEB;
+  --warning-text:#92400E;
+  --danger:      #FF3B30;
+  --danger-bg:   #FFF5F5;
+  --danger-text: #9B1C1C;
+  --info-bg:     #EBF3FF;
+  --info-text:   #0066FF;
 
-    /* ── Typography scale (1.25 Major Third) ── */
-    --text-xs: 11px;
-    --text-sm: 13px;
-    --text-base: 15px;
-    --text-md: 17px;
-    --text-lg: 20px;
-    --text-xl: 25px;
-    --text-2xl: 31px;
-    --text-3xl: 39px;
+  /* ── 8pt spatial scale ── */
+  --s-4:  4px;
+  --s-8:  8px;
+  --s-12: 12px;
+  --s-16: 16px;
+  --s-24: 24px;
+  --s-32: 32px;
+  --s-48: 48px;
+  --s-64: 64px;
+  --s-96: 96px;
 
-    /* ── Font stacks ── */
-    --font-heading: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", sans-serif;
-    --font-body: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", sans-serif;
-    --font-mono: "Cascadia Code", Consolas, "SF Mono", Menlo, monospace;
+  /* ── Type scale (1.25 ratio) ── */
+  --t-xs:  12px;
+  --t-sm:  13px;
+  --t-base:15px;
+  --t-md:  16px;
+  --t-lg:  20px;
+  --t-xl:  25px;
+  --t-2xl: 32px;
+  --t-3xl: 40px;
+
+  /* ── Font stacks ── */
+  --font-sans: "SF Pro Display", -apple-system, "Segoe UI", system-ui, "Helvetica Neue", sans-serif;
+  --font-text: "SF Pro Text", -apple-system, "Segoe UI", system-ui, "Helvetica Neue", sans-serif;
+  --font-mono: "SF Mono", "Cascadia Code", Consolas, "Fira Code", monospace;
+
+  /* ── Line heights ── */
+  --lh-tight:  1.3;
+  --lh-normal: 1.6;
+  --lh-loose:  1.8;
+
+  /* ── Layout ── */
+  --content-width: 780px;
+  --reading-width: 620px;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   RESET & BASE
+   ═══════════════════════════════════════════════════════════════════ */
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: var(--font-text);
+  font-size: var(--t-base);
+  line-height: var(--lh-normal);
+  color: var(--text-secondary);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+img { display: block; max-width: 100%; height: auto; }
+
+strong { color: var(--text-primary); font-weight: 600; }
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   LAYOUT
+   ═══════════════════════════════════════════════════════════════════ */
+
+.page {
+  max-width: var(--content-width);
+  margin: 0 auto;
+  padding: 0 var(--s-48);
+}
+
+.reading-width {
+  max-width: var(--reading-width);
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   HEADER
+   ═══════════════════════════════════════════════════════════════════ */
+
+.report-header {
+  padding: var(--s-64) 0 var(--s-48);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: var(--s-48);
+}
+
+.report-header h1 {
+  font-family: var(--font-sans);
+  font-size: var(--t-2xl);
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.025em;
+  line-height: var(--lh-tight);
+  margin-bottom: var(--s-12);
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0;
+  font-size: var(--t-sm);
+  color: var(--text-tertiary);
+  letter-spacing: 0.005em;
+}
+
+.meta span + span::before {
+  content: "·";
+  margin: 0 var(--s-8);
+  color: var(--text-caption);
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   TABLE OF CONTENTS
+   ═══════════════════════════════════════════════════════════════════ */
+
+.toc {
+  margin-bottom: var(--s-64);
+  padding: var(--s-32) 0;
+}
+
+.toc-label {
+  font-size: var(--t-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-caption);
+  margin-bottom: var(--s-16);
+}
+
+.toc-list {
+  list-style: none;
+  padding: 0;
+  columns: 2;
+  column-gap: var(--s-48);
+}
+
+.toc-list li {
+  padding: var(--s-4) 0;
+  break-inside: avoid;
+}
+
+.toc-list a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: var(--t-sm);
+  transition: color 0.15s;
+}
+
+.toc-list a:hover {
+  color: var(--accent);
+}
+
+.toc-number {
+  display: inline-block;
+  width: 24px;
+  color: var(--text-caption);
+  font-feature-settings: "tnum";
+  font-size: var(--t-sm);
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   SECTIONS
+   ═══════════════════════════════════════════════════════════════════ */
+
+.section {
+  margin-bottom: var(--s-96);
+}
+
+.section-header {
+  margin-bottom: var(--s-32);
+  padding-top: var(--s-48);
+  border-top: 1px solid var(--border);
+}
+
+.section:first-of-type .section-header {
+  border-top: none;
+  padding-top: 0;
+}
+
+.section-title {
+  font-family: var(--font-sans);
+  font-size: var(--t-xl);
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+  line-height: var(--lh-tight);
+  margin-bottom: var(--s-8);
+}
+
+.section-number {
+  color: var(--text-caption);
+  font-weight: 400;
+  margin-right: var(--s-8);
+  font-feature-settings: "tnum";
+}
+
+.section-narrative {
+  font-size: var(--t-base);
+  line-height: var(--lh-loose);
+  color: var(--text-secondary);
+  max-width: var(--reading-width);
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   STAT CARDS — top-border style (NYT/Economist)
+   ═══════════════════════════════════════════════════════════════════ */
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--s-16);
+  margin: var(--s-32) 0;
+}
+
+.stat {
+  padding: var(--s-16) 0;
+  border-top: 2px solid var(--text-primary);
+}
+
+.stat-value {
+  font-family: var(--font-sans);
+  font-size: var(--t-2xl);
+  font-weight: 300;
+  color: var(--text-primary);
+  line-height: 1.1;
+  font-feature-settings: "tnum";
+  letter-spacing: -0.02em;
+}
+
+.stat-label {
+  font-size: var(--t-xs);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+  margin-top: var(--s-8);
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   KEY FINDINGS
+   ═══════════════════════════════════════════════════════════════════ */
+
+.findings {
+  list-style: none;
+  padding: 0;
+  margin: var(--s-32) 0;
+}
+
+.findings li {
+  position: relative;
+  padding: var(--s-12) 0 var(--s-12) 32px;
+  border-bottom: 1px solid var(--border-light);
+  font-size: var(--t-base);
+  line-height: var(--lh-normal);
+  color: var(--text-secondary);
+}
+
+.findings li:last-child { border-bottom: none; }
+
+.findings li::before {
+  content: attr(data-n);
+  position: absolute;
+  left: 0;
+  top: var(--s-12);
+  font-size: var(--t-sm);
+  font-weight: 600;
+  color: var(--text-caption);
+  font-feature-settings: "tnum";
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   AI CALLOUTS
+   ═══════════════════════════════════════════════════════════════════ */
+
+.ai-block {
+  background: var(--bg-inset);
+  border-left: 3px solid var(--accent);
+  padding: var(--s-24);
+  margin: var(--s-32) 0;
+  font-size: var(--t-base);
+  line-height: var(--lh-loose);
+  color: var(--text-secondary);
+}
+
+.ai-block .label {
+  font-size: var(--t-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  margin-bottom: var(--s-8);
+}
+
+.ai-inline {
+  background: var(--bg-inset);
+  border-left: 2px solid var(--accent-muted);
+  padding: var(--s-12) var(--s-16);
+  margin-top: var(--s-8);
+  font-size: var(--t-sm);
+  line-height: var(--lh-normal);
+  color: var(--text-secondary);
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   ALERTS
+   ═══════════════════════════════════════════════════════════════════ */
+
+.alert-group-label {
+  font-size: var(--t-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+  margin: var(--s-24) 0 var(--s-8);
+}
+
+.alert {
+  padding: var(--s-8) var(--s-16);
+  margin-bottom: var(--s-4);
+  font-size: var(--t-sm);
+  line-height: var(--lh-normal);
+  border-left: 3px solid transparent;
+}
+
+.alert-warning { background: var(--warning-bg); color: var(--warning-text); border-color: var(--warning); }
+.alert-info    { background: var(--info-bg);    color: var(--info-text);    border-color: var(--accent); }
+.alert-danger  { background: var(--danger-bg);  color: var(--danger-text);  border-color: var(--danger); }
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   DATA TABLES
+   ═══════════════════════════════════════════════════════════════════ */
+
+.table-wrap {
+  overflow-x: auto;
+  margin: var(--s-24) 0;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--t-sm);
+  font-feature-settings: "tnum";
+}
+
+th {
+  text-align: left;
+  padding: var(--s-8) var(--s-12);
+  font-size: var(--t-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-tertiary);
+  border-bottom: 2px solid var(--text-primary);
+  white-space: nowrap;
+}
+
+td {
+  padding: var(--s-8) var(--s-12);
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+
+tr:last-child td { border-bottom: none; }
+
+.type-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: var(--t-xs);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border-radius: 3px;
+}
+
+.type-numeric     { background: #EEF2FF; color: #4338CA; }
+.type-categorical { background: #FDF2F8; color: #9D174D; }
+.type-datetime    { background: #ECFDF5; color: #065F46; }
+.type-text        { background: #FFFBEB; color: #92400E; }
+.type-boolean     { background: #F5F3FF; color: #6D28D9; }
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   CLEANING IMPACT
+   ═══════════════════════════════════════════════════════════════════ */
+
+.shape-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s-16);
+  margin: var(--s-24) 0;
+}
+
+.shape-card {
+  padding: var(--s-16) 0;
+  border-top: 2px solid var(--text-primary);
+}
+
+.shape-card.after { border-color: var(--success); }
+
+.shape-label {
+  font-size: var(--t-xs);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-tertiary);
+}
+
+.shape-value {
+  font-family: var(--font-sans);
+  font-size: var(--t-lg);
+  font-weight: 300;
+  color: var(--text-primary);
+  margin-top: var(--s-4);
+  font-feature-settings: "tnum";
+}
+
+.steps {
+  list-style: none;
+  padding: 0;
+}
+
+.step {
+  display: flex;
+  gap: var(--s-12);
+  padding: var(--s-12) 0;
+  border-bottom: 1px solid var(--border-light);
+  align-items: baseline;
+}
+
+.step:last-child { border-bottom: none; }
+
+.step-n {
+  flex-shrink: 0;
+  width: 20px;
+  font-size: var(--t-sm);
+  font-weight: 600;
+  color: var(--text-caption);
+  font-feature-settings: "tnum";
+}
+
+.step-body { flex: 1; }
+.step-name { font-weight: 600; color: var(--text-primary); text-transform: capitalize; }
+.step-desc { font-size: var(--t-sm); color: var(--text-tertiary); }
+.step-count { font-size: var(--t-xs); color: var(--text-tertiary); font-weight: 600; margin-top: 2px; }
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   CHART GRID & CARDS
+   ═══════════════════════════════════════════════════════════════════ */
+
+.charts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s-48) var(--s-32);
+  margin: var(--s-32) 0;
+}
+
+.chart {
+  break-inside: avoid;
+}
+
+.chart img {
+  width: 100%;
+  height: auto;
+  display: block;
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+}
+
+.chart-caption {
+  padding-top: var(--s-8);
+}
+
+.chart-title {
+  font-size: var(--t-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: var(--lh-tight);
+}
+
+.chart-desc {
+  font-size: var(--t-xs);
+  color: var(--text-tertiary);
+  margin-top: 2px;
+  line-height: var(--lh-normal);
+}
+
+.chart-annotation {
+  font-size: var(--t-sm);
+  color: var(--text-secondary);
+  line-height: var(--lh-normal);
+  padding-top: var(--s-8);
+  margin-top: var(--s-8);
+  border-top: 1px solid var(--border-light);
+}
+
+.chart-full {
+  grid-column: 1 / -1;
+}
+
+.chart-guide {
+  font-size: var(--t-xs);
+  color: var(--text-tertiary);
+  background: var(--bg-elevated);
+  padding: var(--s-4) var(--s-8);
+  margin-top: var(--s-4);
+  line-height: var(--lh-normal);
+  border-radius: 3px;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   FOOTER
+   ═══════════════════════════════════════════════════════════════════ */
+
+.report-footer {
+  margin-top: var(--s-96);
+  padding: var(--s-32) 0;
+  border-top: 1px solid var(--border);
+  font-size: var(--t-xs);
+  color: var(--text-caption);
+  letter-spacing: 0.02em;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   PRINT / PDF — dedicated rules for WeasyPrint & xhtml2pdf
+   ═══════════════════════════════════════════════════════════════════ */
+
+@page {
+  size: A4;
+  margin: 20mm 18mm 25mm 18mm;
+  @bottom-right {
+    content: counter(page);
+    font-size: 9px;
+    color: #86868B;
+    font-family: "Segoe UI", system-ui, sans-serif;
   }
+}
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+@media print {
+  /* ── Reset for print ── */
+  :root {
+    --text-primary:   #000000;
+    --text-secondary: #1A1A1A;
+    --text-tertiary:  #555555;
+    --text-caption:   #777777;
+    --bg:             #FFFFFF;
+    --bg-elevated:    #F5F5F5;
+    --bg-inset:       #F8F8F8;
+    --border:         #CCCCCC;
+    --border-light:   #E5E5E5;
+  }
 
   body {
-    font-family: var(--font-body);
-    color: var(--text-body);
-    background: var(--bg);
-    line-height: 1.75;
-    font-size: var(--text-base);
-    font-weight: 400;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+    font-size: 10.5pt;
+    line-height: 1.55;
+    color: #1A1A1A;
   }
 
-  .container {
-    max-width: 820px;
-    margin: 0 auto;
-    padding: 0 40px;
+  .page {
+    max-width: 100%;
+    padding: 0;
   }
 
   /* ── Header ── */
   .report-header {
-    background: var(--bg);
-    color: var(--text-primary);
-    padding: 56px 0 40px;
-    margin-bottom: var(--space-xl);
-    border-top: 4px solid var(--accent);
-    border-bottom: 1px solid var(--border);
+    padding: 0 0 12pt;
+    margin-bottom: 20pt;
+    border-top: 3pt solid #000;
+    border-bottom: 0.5pt solid #CCC;
   }
+
   .report-header h1 {
-    font-family: var(--font-heading);
-    font-size: var(--text-2xl);
-    font-weight: 700;
-    letter-spacing: -0.025em;
-    line-height: 1.15;
-    margin-bottom: 12px;
-    color: var(--text-primary);
-    max-width: 600px;
-  }
-  .meta-badges {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0;
-  }
-  .badge {
-    display: inline-block;
-    padding: 0;
-    background: none;
-    border-radius: 0;
-    font-size: var(--text-sm);
-    font-weight: 500;
-    letter-spacing: 0.01em;
-    color: var(--text-secondary);
-  }
-  .badge + .badge::before {
-    content: "\00b7";
-    margin: 0 12px;
-    color: var(--rule);
-  }
-
-  /* ── Sections ── */
-  .section { margin-bottom: var(--space-3xl); }
-  .section-title {
-    font-family: var(--font-heading);
-    font-size: var(--text-xl);
-    font-weight: 600;
-    color: var(--text-primary);
-    letter-spacing: -0.015em;
-    line-height: 1.2;
-    margin-bottom: var(--space-sm);
-    padding-top: var(--space-lg);
-    border-top: 1px solid var(--border);
-  }
-  .section:first-of-type .section-title {
-    border-top: none;
-    padding-top: 0;
-  }
-  .section-number {
-    font-weight: 400;
-    color: var(--text-tertiary);
-    margin-right: 8px;
-    font-feature-settings: "tnum";
-  }
-  .section-narrative {
-    font-size: var(--text-base);
-    line-height: 1.75;
-    color: var(--text-body);
-    margin-bottom: var(--space-lg);
-    max-width: 640px;
-  }
-  .section-narrative strong {
-    color: var(--text-primary);
-    font-weight: 600;
-  }
-
-  /* ── Table of Contents ── */
-  .toc {
-    margin-bottom: var(--space-2xl);
-    padding: var(--space-lg) 0;
-    background: none;
-    border-radius: 0;
-    border-top: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
-  }
-  .toc-label {
-    font-size: var(--text-xs);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    font-weight: 600;
-    color: var(--text-tertiary);
-    margin-bottom: var(--space-md);
-  }
-  .toc-list {
-    list-style: decimal;
-    padding-left: 20px;
-    columns: 2;
-    column-gap: 40px;
-  }
-  .toc-list li {
-    padding: 4px 0;
-    break-inside: avoid;
-  }
-  .toc-list a {
-    color: var(--text-body);
-    text-decoration: none;
-    font-size: var(--text-sm);
-    font-weight: 400;
-  }
-  .toc-list a:hover { color: var(--accent); }
-
-  /* ── Stat cards ── */
-  .stat-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: var(--space-md);
-    margin-bottom: var(--space-lg);
-  }
-  .stat-card {
-    background: none;
-    border: none;
-    border-radius: 0;
-    padding: var(--space-md) 0;
-    text-align: left;
-    border-top: 2px solid var(--text-primary);
-  }
-  .stat-card .value {
-    font-size: var(--text-3xl);
-    font-weight: 300;
-    color: var(--text-primary);
-    line-height: 1.1;
-    font-feature-settings: "tnum";
+    font-size: 22pt;
     letter-spacing: -0.02em;
   }
-  .stat-card .label {
-    font-size: var(--text-xs);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-top: var(--space-sm);
-    color: var(--text-tertiary);
-    font-weight: 500;
-  }
 
-  /* ── Findings list ── */
-  .findings-list {
-    list-style: none;
-    padding: 0;
-  }
-  .findings-list li {
-    padding: var(--space-md) 0;
-    padding-left: 28px;
+  .meta { font-size: 9pt; }
+
+  /* ── TOC ── */
+  .toc {
+    page-break-after: always;
     margin-bottom: 0;
-    background: none;
-    border-left: none;
-    border-radius: 0;
-    border-bottom: 1px solid var(--border-light);
-    font-size: var(--text-base);
-    color: var(--text-body);
-    line-height: 1.65;
-    position: relative;
+    padding-bottom: 0;
   }
-  .finding-number {
-    position: absolute;
-    left: 0;
-    top: var(--space-md);
-    font-size: var(--text-sm);
-    font-weight: 600;
-    color: var(--text-tertiary);
-    font-feature-settings: "tnum";
+
+  .toc-list a { color: #1A1A1A; }
+
+  /* ── Sections ── */
+  .section {
+    margin-bottom: 20pt;
+  }
+
+  .section-header {
+    page-break-after: avoid;
+    padding-top: 16pt;
+    margin-bottom: 12pt;
+  }
+
+  .section-title {
+    font-size: 16pt;
+    page-break-after: avoid;
+  }
+
+  .section-narrative {
+    page-break-after: avoid;
+    font-size: 10pt;
+  }
+
+  /* ── Stats ── */
+  .stats {
+    page-break-inside: avoid;
+    margin: 12pt 0;
+  }
+
+  .stat {
+    border-top: 1pt solid #000;
+  }
+
+  .stat-value {
+    font-size: 20pt;
+    color: #000;
+  }
+
+  /* ── Charts — critical for PDF layout ── */
+  .charts {
+    display: block;
+    columns: 2;
+    column-gap: 16pt;
+    orphans: 1;
+    widows: 1;
+  }
+
+  .chart {
     display: inline-block;
-    min-width: 20px;
-  }
-  .findings-list li:last-child { border-bottom: none; }
-
-  /* ── Alerts ── */
-  .alert-group-title {
-    font-size: var(--text-xs);
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin: var(--space-lg) 0 var(--space-sm);
-    color: var(--text-tertiary);
-  }
-  .alert {
-    padding: 10px var(--space-md);
-    border-radius: 0;
-    margin-bottom: 4px;
-    font-size: var(--text-sm);
-    border-left: 3px solid transparent;
-    line-height: 1.6;
-  }
-  .alert-warning { background: var(--warning-bg); color: var(--warning-text); border-left-color: #d4a017; }
-  .alert-info    { background: var(--info-bg);    color: var(--info-text);    border-left-color: var(--accent); }
-  .alert-danger  { background: var(--danger-bg);  color: var(--danger-text);  border-left-color: #c5221f; }
-
-  /* ── Profile table ── */
-  .profile-table {
     width: 100%;
-    border-collapse: collapse;
-    font-size: var(--text-sm);
-    font-feature-settings: "tnum";
+    break-inside: avoid;
+    page-break-inside: avoid;
+    margin-bottom: 16pt;
   }
-  .profile-table th {
+
+  .chart img {
+    border: none;
+    border-radius: 0;
+    max-width: 100%;
+    width: 100%;
+    height: auto;
+  }
+
+  .chart-full {
+    column-span: all;
+    width: 100%;
+  }
+
+  .chart-caption {
+    break-before: avoid;
+    page-break-before: avoid;
+  }
+
+  /* ── Findings ── */
+  .findings {
+    page-break-inside: auto;
+  }
+
+  .findings li {
+    page-break-inside: avoid;
+    border-bottom-color: #E5E5E5;
+  }
+
+  /* ── Tables ── */
+  th {
+    border-bottom: 1.5pt solid #000;
+  }
+
+  td {
+    font-size: 9pt;
+    padding: 4pt 8pt;
+  }
+
+  td:last-child {
+    max-width: 180pt;
+    font-size: 8pt;
+    line-height: 1.3;
+  }
+
+  tr:hover td { background: none; }
+
+  .type-tag {
+    border: 0.5pt solid #CCC;
     background: none;
-    color: var(--text-tertiary);
-    padding: var(--space-sm) 12px;
-    text-align: left;
-    font-weight: 600;
-    font-size: var(--text-xs);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    border-bottom: 2px solid var(--text-primary);
+    color: #1A1A1A;
   }
-  .profile-table td {
-    padding: var(--space-sm) 12px;
-    border-bottom: 1px solid var(--border-light);
-    color: var(--text-body);
-  }
-  .profile-table tr:hover td { background: var(--bg-alt); }
-  .type-badge {
-    display: inline-block;
-    padding: 2px 8px;
-    border-radius: 3px;
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.02em;
-  }
-  .type-numeric     { background: #eef2ff; color: #3b5998; }
-  .type-categorical { background: #fdf0f5; color: #9b2c5e; }
-  .type-datetime    { background: #ecfdf5; color: #166534; }
-  .type-text        { background: #fffbeb; color: #854d0e; }
-  .type-boolean     { background: #f3f0ff; color: #6d28d9; }
 
   /* ── Cleaning ── */
-  .cleaning-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--space-md);
-    margin-bottom: var(--space-lg);
-  }
-  .shape-card {
-    background: none;
-    border: none;
-    border-radius: 0;
-    padding: var(--space-md) 0;
-    text-align: left;
-    border-top: 2px solid var(--text-primary);
-  }
-  .shape-card.after { border-color: var(--success); background: none; }
-  .shape-card .shape-label {
-    font-size: var(--text-xs);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--text-tertiary);
-    font-weight: 500;
-  }
-  .shape-card .shape-value {
-    font-size: var(--text-lg);
-    font-weight: 300;
-    color: var(--text-primary);
-    margin-top: var(--space-xs);
-    font-feature-settings: "tnum";
-  }
-  .step-list { list-style: none; padding: 0; }
-  .step-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    padding: 12px 0;
-    border-bottom: 1px solid var(--border-light);
-  }
-  .step-number {
-    flex-shrink: 0;
-    width: auto;
-    height: auto;
-    background: none;
-    color: var(--text-tertiary);
-    border-radius: 0;
-    display: block;
-    font-size: var(--text-sm);
-    font-weight: 600;
-    font-feature-settings: "tnum";
-    min-width: 20px;
-  }
-  .step-content { flex: 1; }
-  .step-name { font-weight: 600; color: var(--text-primary); text-transform: capitalize; }
-  .step-desc { font-size: var(--text-sm); color: var(--text-secondary); }
-  .step-affected { font-size: var(--text-xs); color: var(--text-secondary); font-weight: 600; margin-top: 2px; }
+  .shape-grid { page-break-inside: avoid; }
 
-  /* ── Chart grid ── */
-  .chart-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--space-xl);
+  /* ── AI callouts ── */
+  .ai-block {
+    border-left: 2pt solid #0066FF;
+    background: #F8F9FA;
+    padding: 10pt 14pt;
   }
-  .chart-card {
-    border: none;
-    border-radius: 0;
-    overflow: hidden;
-    background: none;
-    box-shadow: none;
-  }
-  .chart-card img {
-    width: 100%;
-    height: auto;
-    display: block;
-    border: 1px solid var(--border-light);
-  }
-  .chart-info {
-    padding: var(--space-sm) 0;
-  }
-  .chart-title {
-    font-weight: 600;
-    color: var(--text-primary);
-    font-size: var(--text-sm);
-    line-height: 1.4;
-  }
-  .chart-desc {
-    font-size: 12px;
-    color: var(--text-tertiary);
-    margin-top: 2px;
-    line-height: 1.5;
-  }
-  .chart-annotation {
-    font-size: var(--text-sm);
-    color: var(--text-body);
-    line-height: 1.6;
-    padding-top: var(--space-sm);
-    margin-top: var(--space-sm);
-    border-top: 1px solid var(--border-light);
-  }
-  .chart-full { grid-column: 1 / -1; }
 
-  /* ── Reading guide ── */
-  .chart-guide {
-    font-size: var(--text-xs);
-    color: var(--text-secondary);
-    background: var(--bg-tertiary);
-    padding: 6px 10px;
-    margin-top: 4px;
-    line-height: 1.5;
-    border-radius: 3px;
+  .ai-inline {
+    border-left: 1.5pt solid #4D94FF;
+    background: #F8F9FA;
+    padding: 6pt 10pt;
   }
-  .chart-guide-label {
-    font-weight: 600;
-    color: var(--text-tertiary);
+
+  /* ── Alerts ── */
+  .alert {
+    border-left-width: 2pt;
+    background: none;
+    color: #1A1A1A;
   }
 
   /* ── Footer ── */
   .report-footer {
-    margin-top: var(--space-3xl);
-    padding: var(--space-lg) 0;
-    border-top: 1px solid var(--border);
-    text-align: left;
-    font-size: var(--text-xs);
-    color: var(--text-tertiary);
-    letter-spacing: 0.02em;
+    margin-top: 24pt;
+    padding-top: 8pt;
+    border-top: 0.5pt solid #CCC;
+    font-size: 8pt;
   }
+}
 
-  /* ── Print ── */
-  @page {
-    size: A4;
-    margin: 0.75in 0.75in 1in 0.75in;
-    @bottom-right {
-      content: counter(page);
-      font-size: 9px;
-      color: #8e8e93;
-      font-family: "Segoe UI", system-ui, sans-serif;
-    }
-  }
+/* ═══════════════════════════════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════════════════════════════ */
 
-  @media print {
-    :root {
-      --text-primary: #000000;
-      --text-body: #1a1a1a;
-      --text-secondary: #444444;
-      --text-tertiary: #666666;
-    }
-
-    body {
-      font-size: 12px;
-      line-height: 1.65;
-      color: #1a1a1a;
-    }
-
-    .container {
-      max-width: 100%;
-      padding: 0;
-    }
-
-    .report-header {
-      padding: 0 0 16px;
-      margin-bottom: 24px;
-      border-top: 3px solid #000;
-      border-bottom: 1px solid #ccc;
-    }
-
-    .report-header h1 { font-size: 24px; }
-
-    .toc {
-      page-break-after: always;
-    }
-
-    .toc-list a { color: #1a1a1a; }
-
-    /* Let sections flow across pages — avoid was causing one-chart-per-page */
-    .section {
-      page-break-inside: auto;
-      margin-bottom: 24px;
-    }
-
-    .section-title {
-      page-break-after: avoid;
-      font-size: 18px;
-    }
-
-    /* Flatten grid to CSS columns for print — much better pagination in WeasyPrint */
-    .chart-grid {
-      display: block;
-      columns: 2;
-      column-gap: 16px;
-      orphans: 1;
-      widows: 1;
-    }
-
-    .chart-card {
-      break-inside: avoid;
-      page-break-inside: avoid;
-      margin-bottom: 16px;
-      display: inline-block;
-      width: 100%;
-    }
-
-    .chart-card img {
-      border: none;
-      max-width: 100%;
-      width: 100%;
-      height: auto;
-    }
-
-    /* Full-width charts span both columns */
-    .chart-full {
-      column-span: all;
-      width: 100%;
-    }
-
-    /* Keep caption with its chart image */
-    .chart-info {
-      break-before: avoid;
-    }
-
-    /* Keep stat cards together on one page */
-    .stat-grid {
-      page-break-inside: avoid;
-    }
-
-    .stat-card { border-top: 1px solid #000; }
-    .stat-card .value { color: #000; }
-
-    /* Allow findings to split across pages */
-    .findings-list {
-      page-break-inside: auto;
-    }
-    .findings-list li { border-bottom-color: #ddd; }
-
-    .profile-table th { border-bottom: 1.5px solid #000; }
-
-    .profile-table td {
-      font-size: 10px;
-      padding: 4px 8px;
-    }
-
-    /* Constrain interpretation column in stat test table */
-    .profile-table td:last-child {
-      max-width: 200px;
-      font-size: 9px;
-      line-height: 1.3;
-    }
-
-    .profile-table tr:hover td { background: none; }
-
-    .alert {
-      border-left-width: 2px;
-      background: none;
-      color: #1a1a1a;
-    }
-
-    .type-badge {
-      border: 1px solid #ccc;
-      background: none;
-      color: #1a1a1a;
-    }
-
-    .cleaning-grid {
-      page-break-inside: avoid;
-    }
-  }
-
-  @media (max-width: 700px) {
-    .chart-grid { grid-template-columns: 1fr; }
-    .cleaning-grid { grid-template-columns: 1fr; }
-    .stat-grid { grid-template-columns: repeat(2, 1fr); }
-    .toc-list { columns: 1; }
-  }
+@media (max-width: 700px) {
+  .page { padding: 0 var(--s-24); }
+  .charts { grid-template-columns: 1fr; }
+  .shape-grid { grid-template-columns: 1fr; }
+  .stats { grid-template-columns: repeat(2, 1fr); }
+  .toc-list { columns: 1; }
+}
 </style>
 </head>
 <body>
 
-<!-- ── Header ── -->
+<!-- ═══════════════════════════════════════════════════════════════
+     HEADER
+     ═══════════════════════════════════════════════════════════════ -->
+
 <header class="report-header">
-  <div class="container">
+  <div class="page">
     <h1>{{ report.title }}</h1>
-    <div class="meta-badges">
-      <span class="badge">{{ report.dataset_filename }}</span>
-      <span class="badge">{{ "{:,}".format(report.profile.total_rows) }} rows</span>
-      <span class="badge">{{ report.profile.total_columns }} columns</span>
-      <span class="badge">{{ report.generated_at }}</span>
+    <div class="meta">
+      <span>{{ report.dataset_filename }}</span>
+      <span>{{ "{:,}".format(report.profile.total_rows) }} rows</span>
+      <span>{{ report.profile.total_columns }} columns</span>
+      <span>{{ report.generated_at }}</span>
     </div>
   </div>
 </header>
 
-<div class="container">
+<div class="page">
 
-  <!-- ── Table of Contents ── -->
+  <!-- ═══════════════════════════════════════════════════════════════
+       TABLE OF CONTENTS
+       ═══════════════════════════════════════════════════════════════ -->
+
   <nav class="toc">
     <div class="toc-label">Contents</div>
     <ol class="toc-list">
-      <li><a href="#executive-summary">Executive Summary</a></li>
-      <li><a href="#data-overview">Data Overview</a></li>
-      {% if report.alerts %}<li><a href="#data-quality-alerts">Data Quality Alerts</a></li>{% endif %}
+      {% set toc_items = [] %}
+      {% set _ = toc_items.append(("executive-summary", "Executive Summary")) %}
+      {% set _ = toc_items.append(("data-overview", "Data Overview")) %}
+      {% if report.alerts %}{% set _ = toc_items.append(("data-quality", "Data Quality")) %}{% endif %}
       {% for section in report.sections %}
-      <li><a href="#{{ section.id }}">{{ section.title }}</a></li>
+        {% set _ = toc_items.append((section.id, section.title)) %}
       {% endfor %}
-      {% if report.statistical_report %}<li><a href="#stat-tests">Statistical Test Results</a></li>{% endif %}
-      {% if report.cleaning_report %}<li><a href="#cleaning">Cleaning Impact</a></li>{% endif %}
-      <li><a href="#appendix">Appendix: Column Profiles</a></li>
+      {% if report.statistical_report and report.statistical_report.tests %}{% set _ = toc_items.append(("stat-tests", "Statistical Tests")) %}{% endif %}
+      {% if report.cleaning_report %}{% set _ = toc_items.append(("cleaning", "Cleaning Impact")) %}{% endif %}
+      {% if report.ai_analysis and report.ai_analysis.recommendations %}{% set _ = toc_items.append(("recommendations", "Recommendations")) %}{% endif %}
+      {% set _ = toc_items.append(("appendix", "Column Profiles")) %}
+
+      {% for id, title in toc_items %}
+      <li><a href="#{{ id }}"><span class="toc-number">{{ loop.index }}.</span>{{ title }}</a></li>
+      {% endfor %}
     </ol>
   </nav>
 
-  <!-- ── 1. Executive Summary ── -->
-  <div class="section" id="executive-summary">
-    <h2 class="section-title"><span class="section-number">1</span>Executive Summary</h2>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       1 — EXECUTIVE SUMMARY
+       ═══════════════════════════════════════════════════════════════ -->
+
+  {% set ns = namespace(n=1) %}
+
+  <section class="section" id="executive-summary">
+    <div class="section-header">
+      <h2 class="section-title"><span class="section-number">{{ ns.n }}.</span> Executive Summary</h2>
+    </div>
+
     {% if report.executive_narrative %}
-    <p class="section-narrative">{{ report.executive_narrative }}</p>
+    <p class="section-narrative reading-width">{{ report.executive_narrative }}</p>
     {% endif %}
 
-    <div class="stat-grid">
-      <div class="stat-card">
-        <div class="value">{{ "{:,}".format(report.profile.total_rows) }}</div>
-        <div class="label">Total Rows</div>
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-value">{{ "{:,}".format(report.profile.total_rows) }}</div>
+        <div class="stat-label">Rows</div>
       </div>
-      <div class="stat-card">
-        <div class="value">{{ report.profile.total_columns }}</div>
-        <div class="label">Columns</div>
+      <div class="stat">
+        <div class="stat-value">{{ report.profile.total_columns }}</div>
+        <div class="stat-label">Columns</div>
       </div>
-      <div class="stat-card">
-        <div class="value">{{ "{:,}".format(report.profile.duplicate_row_count) }}</div>
-        <div class="label">Duplicates</div>
+      <div class="stat">
+        <div class="stat-value">{{ "{:,}".format(report.profile.duplicate_row_count) }}</div>
+        <div class="stat-label">Duplicates</div>
       </div>
-      <div class="stat-card">
-        <div class="value">{{ report.alerts | length }}</div>
-        <div class="label">Quality Alerts</div>
+      <div class="stat">
+        <div class="stat-value">{{ report.alerts | length }}</div>
+        <div class="stat-label">Alerts</div>
       </div>
     </div>
 
     {% if report.key_findings %}
-    <ul class="findings-list">
+    <ul class="findings">
       {% for finding in report.key_findings %}
-      <li><span class="finding-number">{{ loop.index }}</span>{{ finding }}</li>
+      <li data-n="{{ loop.index }}">{{ finding }}</li>
       {% endfor %}
     </ul>
     {% endif %}
-  </div>
 
-  <!-- ── 2. Data Overview ── -->
-  <div class="section" id="data-overview">
-    <h2 class="section-title"><span class="section-number">2</span>Data Overview</h2>
+    {% if report.ai_analysis and report.ai_analysis.executive_summary %}
+    <div class="ai-block">
+      <div class="label">AI Analysis</div>
+      <div>{{ report.ai_analysis.executive_summary }}</div>
+    </div>
+    {% endif %}
+  </section>
+
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       2 — DATA OVERVIEW
+       ═══════════════════════════════════════════════════════════════ -->
+
+  {% set ns = namespace(n=2) %}
+
+  <section class="section" id="data-overview">
+    <div class="section-header">
+      <h2 class="section-title"><span class="section-number">{{ ns.n }}.</span> Data Overview</h2>
+    </div>
+
     {% if report.data_overview_narrative %}
-    <p class="section-narrative">{{ report.data_overview_narrative }}</p>
+    <p class="section-narrative reading-width">{{ report.data_overview_narrative }}</p>
     {% endif %}
 
-    <div class="stat-grid">
-      {% set ns = namespace(numeric=0, categorical=0, datetime=0, text=0, boolean=0) %}
+    <div class="stats">
+      {% set ns_types = namespace(numeric=0, categorical=0, datetime=0, text=0, boolean=0) %}
       {% for col in report.profile.columns %}
-        {% if col.inferred_type | enum_val == 'numeric' %}{% set ns.numeric = ns.numeric + 1 %}
-        {% elif col.inferred_type | enum_val == 'categorical' %}{% set ns.categorical = ns.categorical + 1 %}
-        {% elif col.inferred_type | enum_val == 'datetime' %}{% set ns.datetime = ns.datetime + 1 %}
-        {% elif col.inferred_type | enum_val == 'text' %}{% set ns.text = ns.text + 1 %}
-        {% elif col.inferred_type | enum_val == 'boolean' %}{% set ns.boolean = ns.boolean + 1 %}
+        {% if col.inferred_type | enum_val == 'numeric' %}{% set ns_types.numeric = ns_types.numeric + 1 %}
+        {% elif col.inferred_type | enum_val == 'categorical' %}{% set ns_types.categorical = ns_types.categorical + 1 %}
+        {% elif col.inferred_type | enum_val == 'datetime' %}{% set ns_types.datetime = ns_types.datetime + 1 %}
+        {% elif col.inferred_type | enum_val == 'text' %}{% set ns_types.text = ns_types.text + 1 %}
+        {% elif col.inferred_type | enum_val == 'boolean' %}{% set ns_types.boolean = ns_types.boolean + 1 %}
         {% endif %}
       {% endfor %}
-      {% if ns.numeric %}<div class="stat-card"><div class="value">{{ ns.numeric }}</div><div class="label">Numeric</div></div>{% endif %}
-      {% if ns.categorical %}<div class="stat-card"><div class="value">{{ ns.categorical }}</div><div class="label">Categorical</div></div>{% endif %}
-      {% if ns.datetime %}<div class="stat-card"><div class="value">{{ ns.datetime }}</div><div class="label">Datetime</div></div>{% endif %}
-      {% if ns.text %}<div class="stat-card"><div class="value">{{ ns.text }}</div><div class="label">Text</div></div>{% endif %}
-      {% if ns.boolean %}<div class="stat-card"><div class="value">{{ ns.boolean }}</div><div class="label">Boolean</div></div>{% endif %}
+      {% if ns_types.numeric %}<div class="stat"><div class="stat-value">{{ ns_types.numeric }}</div><div class="stat-label">Numeric</div></div>{% endif %}
+      {% if ns_types.categorical %}<div class="stat"><div class="stat-value">{{ ns_types.categorical }}</div><div class="stat-label">Categorical</div></div>{% endif %}
+      {% if ns_types.datetime %}<div class="stat"><div class="stat-value">{{ ns_types.datetime }}</div><div class="stat-label">Datetime</div></div>{% endif %}
+      {% if ns_types.text %}<div class="stat"><div class="stat-value">{{ ns_types.text }}</div><div class="stat-label">Text</div></div>{% endif %}
+      {% if ns_types.boolean %}<div class="stat"><div class="stat-value">{{ ns_types.boolean }}</div><div class="stat-label">Boolean</div></div>{% endif %}
     </div>
-  </div>
+  </section>
 
-  <!-- ── 3. Data Quality Alerts ── -->
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       3 — DATA QUALITY (conditional)
+       ═══════════════════════════════════════════════════════════════ -->
+
   {% if report.alerts %}
-  {% set ns_section = namespace(counter=3) %}
-  <div class="section" id="data-quality-alerts">
-    <h2 class="section-title"><span class="section-number">{{ ns_section.counter }}</span>Data Quality Alerts</h2>
-    <p class="section-narrative">
-      {{ report.alerts | length }} alert{{ 's' if report.alerts | length != 1 else '' }}
-      detected across the dataset. Issues are grouped by severity below.
+  {% set ns_sec = namespace(counter=3) %}
+
+  <section class="section" id="data-quality">
+    <div class="section-header">
+      <h2 class="section-title"><span class="section-number">{{ ns_sec.counter }}.</span> Data Quality</h2>
+    </div>
+
+    <p class="section-narrative reading-width">
+      {{ report.alerts | length }} alert{{ 's' if report.alerts | length != 1 else '' }} detected.
     </p>
 
+    {% set dangers = report.alerts | selectattr('severity', 'equalto', 'danger') | list %}
     {% set warnings = report.alerts | selectattr('severity', 'equalto', 'warning') | list %}
     {% set infos = report.alerts | selectattr('severity', 'equalto', 'info') | list %}
-    {% set dangers = report.alerts | selectattr('severity', 'equalto', 'danger') | list %}
 
     {% if dangers %}
-    <div class="alert-group-title">Critical ({{ dangers | length }})</div>
-    {% for alert in dangers %}
-    <div class="alert alert-danger">{{ alert.message }}</div>
+    <div class="alert-group-label">Critical · {{ dangers | length }}</div>
+    {% for a in dangers %}
+    <div class="alert alert-danger">{{ a.message }}</div>
     {% endfor %}
     {% endif %}
 
     {% if warnings %}
-    <div class="alert-group-title">Warnings ({{ warnings | length }})</div>
-    {% for alert in warnings %}
-    <div class="alert alert-warning">{{ alert.message }}</div>
+    <div class="alert-group-label">Warnings · {{ warnings | length }}</div>
+    {% for a in warnings %}
+    <div class="alert alert-warning">{{ a.message }}</div>
     {% endfor %}
     {% endif %}
 
     {% if infos %}
-    <div class="alert-group-title">Informational ({{ infos | length }})</div>
-    {% for alert in infos %}
-    <div class="alert alert-info">{{ alert.message }}</div>
+    <div class="alert-group-label">Info · {{ infos | length }}</div>
+    {% for a in infos %}
+    <div class="alert alert-info">{{ a.message }}</div>
     {% endfor %}
     {% endif %}
-  </div>
-  {% set ns_section = namespace(counter=4) %}
+  </section>
+
+  {% set ns_sec = namespace(counter=4) %}
   {% else %}
-  {% set ns_section = namespace(counter=3) %}
+  {% set ns_sec = namespace(counter=3) %}
   {% endif %}
 
-  <!-- ── 4+. Thematic Chart Sections ── -->
-  {% set ns_after_charts = namespace(counter=ns_section.counter + report.sections | length) %}
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       CHART SECTIONS (dynamic)
+       ═══════════════════════════════════════════════════════════════ -->
+
+  {% set ns_after = namespace(counter=ns_sec.counter + report.sections | length) %}
+
   {% for section in report.sections %}
-  <div class="section" id="{{ section.id }}">
-    <h2 class="section-title"><span class="section-number">{{ ns_section.counter + loop.index0 }}</span>{{ section.title }}</h2>
+  <section class="section" id="{{ section.id }}">
+    <div class="section-header">
+      <h2 class="section-title"><span class="section-number">{{ ns_sec.counter + loop.index0 }}.</span> {{ section.title }}</h2>
+    </div>
+
     {% if section.narrative %}
-    <p class="section-narrative">
-      {{ section.narrative.headline }}
+    <p class="section-narrative reading-width">
+      <strong>{{ section.narrative.headline }}</strong>
       {% if section.narrative.body %} {{ section.narrative.body }}{% endif %}
     </p>
     {% endif %}
 
-    <div class="chart-grid">
+    <div class="charts">
       {% for chart in section.charts %}
-      <figure class="chart-card{% if chart.chart_type | enum_val in ['heatmap', 'missing_matrix', 'treemap', 'sunburst', 'sankey', 'parallel_coords', 'pca_biplot', 'cluster_scatter', 'anomaly_scatter'] %} chart-full{% endif %}">
-        <img src="data:image/png;base64,{{ chart.image_base64 }}" alt="{{ chart.title }}">
-        <figcaption class="chart-info">
+      <figure class="chart{% if chart.chart_type | enum_val in ['heatmap', 'missing_matrix', 'treemap', 'sunburst', 'sankey', 'parallel_coords', 'pca_biplot', 'cluster_scatter', 'anomaly_scatter'] %} chart-full{% endif %}">
+        <img src="data:image/png;base64,{{ chart.image_base64 }}" alt="{{ chart.title }}" loading="lazy">
+        <figcaption class="chart-caption">
           <div class="chart-title">{{ chart.title }}</div>
-          <div class="chart-desc">{{ chart.description }}</div>
-          {% if chart.reading_guide %}
-          <div class="chart-guide">
-            <span class="chart-guide-label">How to read:</span> {{ chart.reading_guide }}
-          </div>
+
+          {% set ai_text = ai_insight_for(chart.title, report.ai_analysis) %}
+          {% if ai_text %}
+          <div class="ai-inline">{{ ai_text }}</div>
+          {% else %}
+            {% if chart.description %}
+            <div class="chart-desc">{{ chart.description }}</div>
+            {% endif %}
+            {% if chart.annotation %}
+            <div class="chart-annotation">{{ chart.annotation }}</div>
+            {% endif %}
           {% endif %}
-          {% if chart.annotation %}
-          <div class="chart-annotation">{{ chart.annotation }}</div>
+
+          {% if chart.reading_guide %}
+          <div class="chart-guide"><strong>How to read:</strong> {{ chart.reading_guide }}</div>
           {% endif %}
         </figcaption>
       </figure>
       {% endfor %}
     </div>
-  </div>
+  </section>
   {% endfor %}
 
-  <!-- ── Statistical Test Results ── -->
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       STATISTICAL TESTS
+       ═══════════════════════════════════════════════════════════════ -->
+
   {% if report.statistical_report and report.statistical_report.tests %}
-  <div class="section" id="stat-tests">
-    <h2 class="section-title"><span class="section-number">{{ ns_after_charts.counter }}</span>Statistical Test Results</h2>
-    {% set ns_after_charts = namespace(counter=ns_after_charts.counter + 1) %}
-    <p class="section-narrative">
-      Hypothesis tests quantify the significance of observed patterns.
-      Tests with p &lt; 0.05 indicate statistically significant results.
+  <section class="section" id="stat-tests">
+    <div class="section-header">
+      <h2 class="section-title"><span class="section-number">{{ ns_after.counter }}.</span> Statistical Tests</h2>
+    </div>
+    {% set ns_after = namespace(counter=ns_after.counter + 1) %}
+
+    <p class="section-narrative reading-width">
+      Results with p &lt; 0.05 indicate statistical significance.
     </p>
 
     {% if report.statistical_report.clusters or report.statistical_report.anomalies or report.statistical_report.pca %}
-    <div class="stat-grid">
+    <div class="stats">
       {% if report.statistical_report.clusters %}
-      <div class="stat-card">
-        <div class="value">{{ report.statistical_report.clusters.optimal_k }}</div>
-        <div class="label">Clusters Found</div>
+      <div class="stat">
+        <div class="stat-value">{{ report.statistical_report.clusters.optimal_k }}</div>
+        <div class="stat-label">Clusters</div>
       </div>
       {% endif %}
       {% if report.statistical_report.anomalies %}
-      <div class="stat-card">
-        <div class="value">{{ report.statistical_report.anomalies.n_anomalies }}</div>
-        <div class="label">Anomalies Detected</div>
+      <div class="stat">
+        <div class="stat-value">{{ report.statistical_report.anomalies.n_anomalies }}</div>
+        <div class="stat-label">Anomalies</div>
       </div>
       {% endif %}
       {% if report.statistical_report.pca %}
-      <div class="stat-card">
-        <div class="value">{{ report.statistical_report.pca.n_components_95 }}</div>
-        <div class="label">PCA Components (95%)</div>
+      <div class="stat">
+        <div class="stat-value">{{ report.statistical_report.pca.n_components_95 }}</div>
+        <div class="stat-label">PCA components (95%)</div>
       </div>
       {% endif %}
     </div>
     {% endif %}
 
-    <table class="profile-table">
-      <thead>
-        <tr>
-          <th>Test</th>
-          <th>Column(s)</th>
-          <th>Statistic</th>
-          <th>p-value</th>
-          <th>Interpretation</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for test in report.statistical_report.tests %}
-        <tr>
-          <td><strong>{{ test.test_name }}</strong></td>
-          <td>{{ test.columns | join(", ") }}</td>
-          <td style="font-feature-settings: 'tnum';">{{ "%.4f"|format(test.statistic) }}</td>
-          <td style="font-feature-settings: 'tnum'; {% if test.p_value < 0.05 %}color: var(--accent); font-weight: 600;{% endif %}">
-            {{ "%.6f"|format(test.p_value) }}
-          </td>
-          <td style="font-size: 12px;">{{ test.interpretation }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Test</th>
+            <th>Column(s)</th>
+            <th>Statistic</th>
+            <th>p-value</th>
+            <th>Interpretation</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for test in report.statistical_report.tests %}
+          <tr>
+            <td><strong>{{ test.test_name }}</strong></td>
+            <td>{{ test.columns | join(", ") }}</td>
+            <td style="font-feature-settings:'tnum'">{{ "%.4f"|format(test.statistic) }}</td>
+            <td style="font-feature-settings:'tnum'{% if test.p_value < 0.05 %}; color: var(--accent); font-weight: 600{% endif %}">
+              {{ "%.6f"|format(test.p_value) }}
+            </td>
+            <td>{{ test.interpretation }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
   {% endif %}
 
-  <!-- ── Cleaning Impact ── -->
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       CLEANING IMPACT
+       ═══════════════════════════════════════════════════════════════ -->
+
   {% if report.cleaning_report %}
-  <div class="section" id="cleaning">
-    <h2 class="section-title"><span class="section-number">{{ ns_after_charts.counter }}</span>Cleaning Impact</h2>
-    {% set ns_after_charts = namespace(counter=ns_after_charts.counter + 1) %}
-    <p class="section-narrative">
-      The automated cleaning pipeline processed the dataset in
-      {{ "{:,}".format(report.cleaning_report.duration_ms) }}ms,
-      applying {{ report.cleaning_report.steps | length }} transformation steps.
+  <section class="section" id="cleaning">
+    <div class="section-header">
+      <h2 class="section-title"><span class="section-number">{{ ns_after.counter }}.</span> Cleaning Impact</h2>
+    </div>
+    {% set ns_after = namespace(counter=ns_after.counter + 1) %}
+
+    <p class="section-narrative reading-width">
+      {{ report.cleaning_report.steps | length }} steps applied in {{ "{:,}".format(report.cleaning_report.duration_ms) }}&thinsp;ms.
     </p>
 
-    <div class="cleaning-grid">
+    <div class="shape-grid">
       <div class="shape-card">
         <div class="shape-label">Before</div>
         <div class="shape-value">
@@ -841,60 +1117,89 @@
       </div>
     </div>
 
-    <ol class="step-list">
+    <ol class="steps">
       {% for step in report.cleaning_report.steps %}
-      <li class="step-item">
-        <div class="step-number">{{ loop.index }}</div>
-        <div class="step-content">
+      <li class="step">
+        <div class="step-n">{{ loop.index }}</div>
+        <div class="step-body">
           <div class="step-name">{{ step.step | replace("_", " ") }}</div>
           <div class="step-desc">{{ step.description }}</div>
           {% if step.rows_affected > 0 %}
-          <div class="step-affected">{{ "{:,}".format(step.rows_affected) }} rows affected</div>
+          <div class="step-count">{{ "{:,}".format(step.rows_affected) }} rows affected</div>
           {% endif %}
         </div>
       </li>
       {% endfor %}
     </ol>
-  </div>
+  </section>
   {% endif %}
 
-  <!-- ── Appendix: Column Profiles ── -->
-  <div class="section" id="appendix">
-    <h2 class="section-title"><span class="section-number">{{ ns_after_charts.counter }}</span>Appendix: Column Profiles</h2>
-    <p class="section-narrative">Detailed metadata for each column in the dataset.</p>
 
-    <table class="profile-table">
-      <thead>
-        <tr>
-          <th>Column</th>
-          <th>Type</th>
-          <th>Nulls</th>
-          <th>Null %</th>
-          <th>Unique</th>
-          <th>Sample Values</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for col in report.profile.columns %}
-        <tr>
-          <td><strong>{{ col.name }}</strong></td>
-          <td><span class="type-badge type-{{ col.inferred_type | enum_val }}">{{ col.inferred_type | enum_val }}</span></td>
-          <td>{{ "{:,}".format(col.null_count) }}</td>
-          <td>{{ "%.1f"|format(col.null_pct) }}%</td>
-          <td>{{ "{:,}".format(col.unique_count) }}</td>
-          <td style="font-size: 12px; color: var(--text-tertiary);">{{ col.sample_values[:3] | join(", ") }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
+  <!-- ═══════════════════════════════════════════════════════════════
+       RECOMMENDATIONS (AI)
+       ═══════════════════════════════════════════════════════════════ -->
+
+  {% if report.ai_analysis and report.ai_analysis.recommendations %}
+  <section class="section" id="recommendations">
+    <div class="section-header">
+      <h2 class="section-title"><span class="section-number">{{ ns_after.counter }}.</span> Recommendations</h2>
+    </div>
+    {% set ns_after = namespace(counter=ns_after.counter + 1) %}
+
+    <div class="ai-block">
+      <div class="label">AI Recommendations</div>
+      <div>{{ report.ai_analysis.recommendations }}</div>
+    </div>
+  </section>
+  {% endif %}
+
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       APPENDIX — COLUMN PROFILES
+       ═══════════════════════════════════════════════════════════════ -->
+
+  <section class="section" id="appendix">
+    <div class="section-header">
+      <h2 class="section-title"><span class="section-number">{{ ns_after.counter }}.</span> Column Profiles</h2>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Column</th>
+            <th>Type</th>
+            <th>Nulls</th>
+            <th>Null %</th>
+            <th>Unique</th>
+            <th>Samples</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for col in report.profile.columns %}
+          <tr>
+            <td><strong>{{ col.name }}</strong></td>
+            <td><span class="type-tag type-{{ col.inferred_type | enum_val }}">{{ col.inferred_type | enum_val }}</span></td>
+            <td>{{ "{:,}".format(col.null_count) }}</td>
+            <td>{{ "%.1f"|format(col.null_pct) }}%</td>
+            <td>{{ "{:,}".format(col.unique_count) }}</td>
+            <td style="color: var(--text-caption)">{{ col.sample_values[:3] | join(", ") }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
 
 </div>
 
-<!-- ── Footer ── -->
+<!-- ═══════════════════════════════════════════════════════════════
+     FOOTER
+     ═══════════════════════════════════════════════════════════════ -->
+
 <footer class="report-footer">
-  <div class="container">
-    Generated by <strong>Data Autopilot</strong> &mdash; Automated Data Analysis Platform
+  <div class="page">
+    Generated by <strong>Data Autopilot</strong>
   </div>
 </footer>
 
