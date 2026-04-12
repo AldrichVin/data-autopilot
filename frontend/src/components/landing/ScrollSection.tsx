@@ -12,12 +12,14 @@ interface ScrollSectionProps {
   height: string;
   textPhases: TextPhase[];
   align?: "left" | "center";
+  media?: React.ReactNode;
 }
 
 export default function ScrollSection({
   height,
   textPhases,
   align = "left",
+  media,
 }: ScrollSectionProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -29,14 +31,32 @@ export default function ScrollSection({
   return (
     <div ref={containerRef} className="relative" style={{ height }}>
       <div className="sticky top-0 z-10 flex h-screen items-center justify-center overflow-hidden">
-        {textPhases.map((phase) => (
-          <PhaseText
-            key={phase.title}
-            phase={phase}
-            scrollYProgress={scrollYProgress}
-            align={align}
-          />
-        ))}
+        {media ? (
+          <div className="flex h-full w-full flex-col items-center justify-center gap-8 px-6 lg:flex-row lg:gap-12 lg:px-20">
+            <div className="relative flex-1">
+              {textPhases.map((phase) => (
+                <PhaseText
+                  key={phase.title}
+                  phase={phase}
+                  scrollYProgress={scrollYProgress}
+                  align={align}
+                />
+              ))}
+            </div>
+            <div className="flex flex-1 items-center justify-center">
+              {media}
+            </div>
+          </div>
+        ) : (
+          textPhases.map((phase) => (
+            <PhaseText
+              key={phase.title}
+              phase={phase}
+              scrollYProgress={scrollYProgress}
+              align={align}
+            />
+          ))
+        )}
       </div>
     </div>
   );
