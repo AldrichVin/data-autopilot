@@ -196,6 +196,17 @@ class StatisticalReport(BaseModel):
     tests: list[StatTestResult] = []
 
 
+class AIChartInsight(BaseModel):
+    chart_title: str
+    explanation: str
+
+
+class AIAnalysis(BaseModel):
+    executive_summary: str = ""
+    chart_insights: list[AIChartInsight] = []
+    recommendations: str = ""
+
+
 class ReportData(BaseModel):
     title: str
     generated_at: str
@@ -209,6 +220,7 @@ class ReportData(BaseModel):
     executive_narrative: str = ""
     data_overview_narrative: str = ""
     statistical_report: Optional[StatisticalReport] = None
+    ai_analysis: Optional[AIAnalysis] = None
 
 
 class ReportRequest(BaseModel):

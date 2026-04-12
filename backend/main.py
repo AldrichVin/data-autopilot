@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from config import R_AVAILABLE, settings
 from models.enums import SessionStatus
 from models.schemas import StatusResponse
-from routers import clean, export, upload, visualize
+from routers import clean, enrich, export, upload, visualize
 from services import file_manager
 
 app = FastAPI(
@@ -25,6 +25,7 @@ app.add_middleware(
 app.include_router(upload.router)
 app.include_router(clean.router)
 app.include_router(visualize.router)
+app.include_router(enrich.router)
 app.include_router(export.router)
 
 
