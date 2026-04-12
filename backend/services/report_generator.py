@@ -10,6 +10,7 @@ from jinja2 import Environment, FileSystemLoader
 
 from models.enums import ChartType
 from models.schemas import (
+    AIAnalysis,
     ChartRecommendation,
     CleaningReport,
     DataProfile,
@@ -44,7 +45,18 @@ def _enum_value(val: object) -> str:
     return val.value if hasattr(val, "value") else str(val)
 
 
+def _ai_insight_for(chart_title: str, ai_analysis: object) -> str:
+    """Look up AI insight text for a chart by its title."""
+    if not ai_analysis or not hasattr(ai_analysis, "chart_insights"):
+        return ""
+    for insight in ai_analysis.chart_insights:
+        if insight.chart_title == chart_title:
+            return insight.explanation
+    return ""
+
+
 _jinja_env.filters["enum_val"] = _enum_value
+_jinja_env.globals["ai_insight_for"] = _ai_insight_for
 
 
 # ---------------------------------------------------------------------------
@@ -142,6 +154,7 @@ def build_report(
     data_overview_narrative = generate_data_overview_narrative(profile, df)
 
     cleaning_report = _load_cleaning_report(session_id)
+    ai_analysis = _load_ai_analysis(session_id)
 
     return ReportData(
         title=title,
@@ -156,6 +169,7 @@ def build_report(
         executive_narrative=executive_narrative,
         data_overview_narrative=data_overview_narrative,
         statistical_report=stat_report,
+        ai_analysis=ai_analysis,
     )
 
 
@@ -195,12 +209,24 @@ def render_html(report: ReportData) -> str:
     return template.render(report=report)
 
 
-def render_pdf(html: str) -> bytes:
-    pdf_html = _inline_css_vars(html)
+def render_pdf_html(report: ReportData) -> str:
+    """Render a simplified HTML designed for PDF conversion."""
+    template = _jinja_env.get_template("report_pdf.html.j2")
+    return template.render(report=report)
+
+
+def render_pdf(html: str, report: ReportData | None = None) -> bytes:
     try:
         from weasyprint import HTML
+        pdf_html = _inline_css_vars(html)
         return HTML(string=pdf_html).write_pdf()
     except (ImportError, OSError):
+        # Fall back to xhtml2pdf with a dedicated simple template
+        if report is not None:
+            pdf_html = render_pdf_html(report)
+        else:
+            pdf_html = _inline_css_vars(html)
+            pdf_html = _strip_unsupported_css_for_xhtml2pdf(pdf_html)
         import io
         from xhtml2pdf import pisa
         buf = io.BytesIO()
@@ -211,54 +237,152 @@ def render_pdf(html: str) -> bytes:
         return buf.read()
 
 
+def _strip_unsupported_css_for_xhtml2pdf(html: str) -> str:
+    """Strip CSS features that xhtml2pdf/reportlab cannot parse."""
+    import re
+
+    # ── Remove entire @-blocks that xhtml2pdf can't handle ──
+
+    # :root block (already inlined by _inline_css_vars)
+    html = re.sub(r":root\s*\{[^}]*\}", "", html)
+
+    # @media blocks (print, max-width) — xhtml2pdf doesn't support them
+    # and they contain properties (columns, grid, etc.) that crash it.
+    html = _remove_balanced_blocks(html, r"@media\s*[^{]*\{")
+
+    # @page — strip nested @-rules (e.g. @bottom-right) but keep outer
+    html = _clean_page_blocks(html)
+
+    # ── Remove unsupported CSS properties ──
+    unsupported_props = [
+        r"font-feature-settings",
+        r"text-rendering",
+        r"-webkit-font-smoothing",
+        r"-moz-osx-font-smoothing",
+        r"display\s*:\s*grid",
+        r"display\s*:\s*inline-block",
+        r"grid-template-columns",
+        r"grid-column",
+        r"column-span",
+        r"column-gap",
+        r"orphans",
+        r"widows",
+        r"transition",
+    ]
+    for prop in unsupported_props:
+        html = re.sub(rf"\s*{prop}[^;]*;", "", html)
+
+    # ── Remove HTML5 attributes ──
+    html = re.sub(r'\s+loading="lazy"', "", html)
+
+    return html
+
+
+def _remove_balanced_blocks(html: str, pattern: str) -> str:
+    """Remove balanced {}-blocks matching a regex pattern."""
+    import re
+
+    result = html
+    for match in reversed(list(re.finditer(pattern, result))):
+        start = match.start()
+        brace_start = match.end() - 1
+        depth = 0
+        pos = brace_start
+        while pos < len(result):
+            if result[pos] == "{":
+                depth += 1
+            elif result[pos] == "}":
+                depth -= 1
+                if depth == 0:
+                    break
+            pos += 1
+        result = result[:start] + result[pos + 1:]
+    return result
+
+
+def _clean_page_blocks(html: str) -> str:
+    """Keep @page blocks but strip nested @-rules inside them."""
+    import re
+
+    result = html
+    for match in list(re.finditer(r"@page\s*\{", html)):
+        start = match.start()
+        brace_start = match.end() - 1
+        depth = 0
+        pos = brace_start
+        while pos < len(html):
+            if html[pos] == "{":
+                depth += 1
+            elif html[pos] == "}":
+                depth -= 1
+                if depth == 0:
+                    break
+            pos += 1
+        full_block = html[start : pos + 1]
+        inner = html[brace_start + 1 : pos]
+        cleaned_inner = re.sub(r"@[\w-]+\s*\{[^}]*\}", "", inner)
+        result = result.replace(full_block, f"@page {{{cleaned_inner}}}")
+    return result
+
+
 _CSS_VARS = {
     # Brand
-    "var(--accent)": "#1a56db",
-    "var(--accent-light)": "#e8eefb",
-    # Text hierarchy
-    "var(--text-primary)": "#1c1c1e",
-    "var(--text-body)": "#3a3a3c",
-    "var(--text-secondary)": "#636366",
-    "var(--text-tertiary)": "#8e8e93",
+    "var(--accent)": "#0066FF",
+    "var(--accent-muted)": "#4D94FF",
+    "var(--accent-subtle)": "#EBF3FF",
+    # Text hierarchy (warm slate)
+    "var(--text-primary)": "#1D1D1F",
+    "var(--text-secondary)": "#48484A",
+    "var(--text-tertiary)": "#86868B",
+    "var(--text-caption)": "#AEAEB2",
     # Surfaces
-    "var(--bg)": "#ffffff",
-    "var(--bg-alt)": "#fafafa",
-    "var(--bg-tertiary)": "#f2f2f7",
+    "var(--bg)": "#FFFFFF",
+    "var(--bg-elevated)": "#F5F5F7",
+    "var(--bg-inset)": "#FAFAFA",
     # Borders
-    "var(--border-light)": "#f0f0f0",
-    "var(--border)": "#e5e5ea",
-    "var(--border-medium)": "#d1d1d6",
-    "var(--rule)": "#c7c7cc",
+    "var(--border)": "#E8E8ED",
+    "var(--border-light)": "#F2F2F7",
     # Semantic
-    "var(--success)": "#34a853",
-    "var(--success-bg)": "#e6f4ea",
-    "var(--warning-bg)": "#fef7e0",
-    "var(--warning-text)": "#7c6a0a",
-    "var(--info-bg)": "#e8eefb",
-    "var(--info-text)": "#1a56db",
-    "var(--danger-bg)": "#fce8e6",
-    "var(--danger-text)": "#c5221f",
-    # Spacing
-    "var(--space-xs)": "4px",
-    "var(--space-sm)": "8px",
-    "var(--space-md)": "16px",
-    "var(--space-lg)": "24px",
-    "var(--space-xl)": "40px",
-    "var(--space-2xl)": "64px",
-    "var(--space-3xl)": "80px",
-    # Typography scale
-    "var(--text-xs)": "11px",
-    "var(--text-sm)": "13px",
-    "var(--text-base)": "15px",
-    "var(--text-md)": "17px",
-    "var(--text-lg)": "20px",
-    "var(--text-xl)": "25px",
-    "var(--text-2xl)": "31px",
-    "var(--text-3xl)": "39px",
+    "var(--success)": "#34C759",
+    "var(--success-bg)": "#F0FFF4",
+    "var(--warning)": "#FF9500",
+    "var(--warning-bg)": "#FFFBEB",
+    "var(--warning-text)": "#92400E",
+    "var(--danger)": "#FF3B30",
+    "var(--danger-bg)": "#FFF5F5",
+    "var(--danger-text)": "#9B1C1C",
+    "var(--info-bg)": "#EBF3FF",
+    "var(--info-text)": "#0066FF",
+    # 8pt spatial scale
+    "var(--s-4)": "4px",
+    "var(--s-8)": "8px",
+    "var(--s-12)": "12px",
+    "var(--s-16)": "16px",
+    "var(--s-24)": "24px",
+    "var(--s-32)": "32px",
+    "var(--s-48)": "48px",
+    "var(--s-64)": "64px",
+    "var(--s-96)": "96px",
+    # Type scale (1.25 ratio)
+    "var(--t-xs)": "12px",
+    "var(--t-sm)": "13px",
+    "var(--t-base)": "15px",
+    "var(--t-md)": "16px",
+    "var(--t-lg)": "20px",
+    "var(--t-xl)": "25px",
+    "var(--t-2xl)": "32px",
+    "var(--t-3xl)": "40px",
     # Font stacks
-    "var(--font-heading)": '"Segoe UI", system-ui, -apple-system, "Helvetica Neue", sans-serif',
-    "var(--font-body)": '"Segoe UI", system-ui, -apple-system, "Helvetica Neue", sans-serif',
-    "var(--font-mono)": '"Cascadia Code", Consolas, "SF Mono", Menlo, monospace',
+    "var(--font-sans)": '"SF Pro Display", -apple-system, "Segoe UI", system-ui, "Helvetica Neue", sans-serif',
+    "var(--font-text)": '"SF Pro Text", -apple-system, "Segoe UI", system-ui, "Helvetica Neue", sans-serif',
+    "var(--font-mono)": '"SF Mono", "Cascadia Code", Consolas, "Fira Code", monospace',
+    # Line heights (use % for xhtml2pdf compatibility — unitless floats crash it)
+    "var(--lh-tight)": "130%",
+    "var(--lh-normal)": "160%",
+    "var(--lh-loose)": "180%",
+    # Layout
+    "var(--content-width)": "780px",
+    "var(--reading-width)": "620px",
 }
 
 
@@ -271,3 +395,8 @@ def _inline_css_vars(html: str) -> str:
 def _load_cleaning_report(session_id: str) -> CleaningReport | None:
     session = file_manager.get_session(session_id)
     return session.get("cleaning_report")
+
+
+def _load_ai_analysis(session_id: str) -> AIAnalysis | None:
+    session = file_manager.get_session(session_id)
+    return session.get("ai_analysis")

@@ -93,7 +93,7 @@ def _generate_pdf_report(session_id: str, title: str) -> Response:
     try:
         report = build_report(session_id, title=title)
         html = render_html(report)
-        pdf_bytes = render_pdf(html)
+        pdf_bytes = render_pdf(html, report=report)
         return Response(
             content=pdf_bytes,
             media_type="application/pdf",
