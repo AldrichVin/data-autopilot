@@ -1,6 +1,5 @@
 import base64
 import io
-import textwrap
 
 import matplotlib
 matplotlib.use("Agg")
@@ -14,14 +13,15 @@ from models.enums import ChartType
 from models.schemas import ChartRecommendation
 
 # ---------------------------------------------------------------------------
-# McKinsey-inspired palette (analogous blues + complements)
+# Premium palette — muted, accessible, no neon
+# Primary blue + complementary earth tones (Apple/Linear inspired)
 # ---------------------------------------------------------------------------
 PALETTE = [
-    "#2563eb", "#7c3aed", "#0891b2", "#059669",
-    "#d97706", "#dc2626", "#4f46e5", "#0284c7",
+    "#0066FF", "#7C3AED", "#0891B2", "#059669",
+    "#D97706", "#DC2626", "#4F46E5", "#0284C7",
 ]
-CHROME = "#495057"
-DARK = "#1a1a2e"
+CHROME = "#86868B"      # warm slate for axes/labels
+DARK = "#1D1D1F"        # near-black for titles
 DPI = 150
 REPORT_DPI = 200
 
@@ -29,23 +29,32 @@ _RC_OVERRIDES = {
     "figure.dpi": DPI,
     "figure.facecolor": "white",
     "axes.facecolor": "white",
-    "axes.edgecolor": CHROME,
-    "axes.linewidth": 0.8,
+    "axes.edgecolor": "#E8E8ED",
+    "axes.linewidth": 0.5,
     "axes.labelcolor": CHROME,
-    "axes.labelsize": 12,
-    "axes.titlesize": 14,
-    "axes.titleweight": "bold",
+    "axes.labelsize": 11,
+    "axes.titlesize": 13,
+    "axes.titleweight": 600,
+    "axes.spines.top": False,
+    "axes.spines.right": False,
     "xtick.color": CHROME,
     "ytick.color": CHROME,
     "xtick.labelsize": 10,
     "ytick.labelsize": 10,
     "xtick.direction": "out",
     "ytick.direction": "out",
+    "xtick.major.size": 0,
+    "ytick.major.size": 0,
+    "xtick.major.pad": 6,
+    "ytick.major.pad": 6,
     "patch.edgecolor": "white",
     "patch.linewidth": 0.5,
-    "grid.alpha": 0.25,
+    "grid.color": "#F2F2F7",
+    "grid.alpha": 0.8,
     "grid.linewidth": 0.5,
     "font.family": "sans-serif",
+    "legend.frameon": False,
+    "legend.fontsize": 9,
 }
 
 _GENERATORS = {}
@@ -92,12 +101,12 @@ def _render(
     with plt.rc_context(_RC_OVERRIDES):
         fig, ax = plt.subplots(figsize=(8, 5.5))
         generator(rec, df, ax)
-        ax.set_title(rec.title, fontsize=14, fontweight="bold", color=DARK, pad=12, loc="left")
+        ax.set_title(
+            rec.title, fontsize=13, fontweight=600,
+            color=DARK, pad=14, loc="left",
+        )
 
-        if rec.annotation:
-            _add_insight_annotation(fig, rec.annotation)
-
-        fig.tight_layout(rect=[0, 0.06 if rec.annotation else 0, 1, 1])
+        fig.tight_layout(rect=[0, 0, 1, 1])
 
         if output_path:
             fig.savefig(output_path, dpi=dpi, bbox_inches="tight", facecolor="white")
@@ -111,16 +120,6 @@ def _render(
         return base64.b64encode(buf.read()).decode("utf-8")
 
 
-def _add_insight_annotation(fig: plt.Figure, text: str) -> None:
-    wrapped = textwrap.fill(text, width=90)
-    fig.text(
-        0.04, 0.02, wrapped,
-        fontsize=9, color="#6c757d", style="italic",
-        va="bottom", ha="left",
-        transform=fig.transFigure,
-    )
-
-
 # ---------------------------------------------------------------------------
 # Chart generators
 # ---------------------------------------------------------------------------
@@ -130,40 +129,30 @@ def _histogram(rec: ChartRecommendation, df: pd.DataFrame, ax: plt.Axes) -> None
     col = rec.columns[0]
     data = pd.to_numeric(df[col], errors="coerce").dropna()
 
-    ax.hist(data, bins=30, edgecolor="white", alpha=0.85, color=PALETTE[0], linewidth=0.6)
+    ax.hist(data, bins=30, edgecolor="white", alpha=0.9, color=PALETTE[0], linewidth=0.4)
 
     mean_val = data.mean()
     median_val = data.median()
-    ax.axvline(mean_val, color=PALETTE[4], linestyle="--", linewidth=1.5, label=f"Mean: {mean_val:,.2f}")
-    ax.axvline(median_val, color=PALETTE[5], linestyle="-.", linewidth=1.5, label=f"Median: {median_val:,.2f}")
+    ax.axvline(mean_val, color=PALETTE[4], linestyle="--", linewidth=1.2, label=f"Mean: {mean_val:,.1f}")
+    ax.axvline(median_val, color=PALETTE[5], linestyle="--", linewidth=1.2, label=f"Median: {median_val:,.1f}")
 
-    ax.set_xlabel(col)
-    ax.set_ylabel("Frequency")
-    ax.legend(fontsize=9, framealpha=0.9, loc="upper right")
-    ax.grid(axis="y", alpha=0.25)
+    ax.set_xlabel(col, fontsize=10, color=CHROME)
+    ax.set_ylabel("Frequency", fontsize=10, color=CHROME)
+    ax.legend(loc="upper right")
+    ax.grid(axis="y")
 
 
 @_register(ChartType.BAR)
 def _bar(rec: ChartRecommendation, df: pd.DataFrame, ax: plt.Axes) -> None:
     col = rec.columns[0]
-    counts = df[col].value_counts().head(15)
-    colors = [PALETTE[i % len(PALETTE)] for i in range(len(counts))]
+    counts = df[col].value_counts().head(12)
 
-    bars = ax.bar(range(len(counts)), counts.values, color=colors, edgecolor="white", linewidth=0.6)
+    ax.barh(range(len(counts)), counts.values[::-1], color=PALETTE[0], edgecolor="white", linewidth=0.4, height=0.7)
 
-    for bar in bars:
-        height = bar.get_height()
-        ax.text(
-            bar.get_x() + bar.get_width() / 2, height,
-            f"{int(height):,}", ha="center", va="bottom",
-            fontsize=9, fontweight="bold", color=CHROME,
-        )
-
-    ax.set_xticks(range(len(counts)))
-    ax.set_xticklabels(counts.index, rotation=45, ha="right")
-    ax.set_xlabel(col)
-    ax.set_ylabel("Count")
-    ax.grid(axis="y", alpha=0.25)
+    ax.set_yticks(range(len(counts)))
+    ax.set_yticklabels(counts.index[::-1], fontsize=10)
+    ax.set_xlabel("Count", fontsize=10, color=CHROME)
+    ax.grid(axis="x")
 
 
 @_register(ChartType.SCATTER)
@@ -174,17 +163,17 @@ def _scatter(rec: ChartRecommendation, df: pd.DataFrame, ax: plt.Axes) -> None:
     mask = x.notna() & y.notna()
     x, y = x[mask], y[mask]
 
-    ax.scatter(x, y, alpha=0.6, s=40, color=PALETTE[0], edgecolors="white", linewidths=0.3)
+    ax.scatter(x, y, alpha=0.5, s=30, color=PALETTE[0], edgecolors="none")
 
     if len(x) >= 2:
         coeffs = np.polyfit(x, y, 1)
         trend_x = np.linspace(x.min(), x.max(), 100)
         trend_y = np.polyval(coeffs, trend_x)
-        ax.plot(trend_x, trend_y, color=PALETTE[5], linewidth=1.5, linestyle="--", alpha=0.8)
+        ax.plot(trend_x, trend_y, color=PALETTE[5], linewidth=1.2, linestyle="--", alpha=0.7)
 
-    ax.set_xlabel(col_x)
-    ax.set_ylabel(col_y)
-    ax.grid(alpha=0.25)
+    ax.set_xlabel(col_x, fontsize=10, color=CHROME)
+    ax.set_ylabel(col_y, fontsize=10, color=CHROME)
+    ax.grid(True)
 
 
 @_register(ChartType.LINE)
@@ -194,12 +183,12 @@ def _line(rec: ChartRecommendation, df: pd.DataFrame, ax: plt.Axes) -> None:
     plot_df[dt_col] = pd.to_datetime(plot_df[dt_col], errors="coerce")
     plot_df = plot_df.dropna().sort_values(dt_col)
 
-    ax.plot(plot_df[dt_col], plot_df[val_col], color=PALETTE[0], linewidth=1.8, marker="o", markersize=3)
-    ax.fill_between(plot_df[dt_col], plot_df[val_col], alpha=0.06, color=PALETTE[0])
+    ax.plot(plot_df[dt_col], plot_df[val_col], color=PALETTE[0], linewidth=1.5)
+    ax.fill_between(plot_df[dt_col], plot_df[val_col], alpha=0.04, color=PALETTE[0])
 
-    ax.set_xlabel(dt_col)
-    ax.set_ylabel(val_col)
-    ax.grid(alpha=0.25)
+    ax.set_xlabel(dt_col, fontsize=10, color=CHROME)
+    ax.set_ylabel(val_col, fontsize=10, color=CHROME)
+    ax.grid(True)
     plt.setp(ax.xaxis.get_majorticklabels(), rotation=45)
 
 
@@ -223,33 +212,23 @@ def _heatmap(rec: ChartRecommendation, df: pd.DataFrame, ax: plt.Axes) -> None:
     sns.heatmap(
         corr, annot=True, fmt=".2f", cmap="RdBu_r",
         center=0, vmin=-1, vmax=1, ax=ax, square=use_square,
-        linewidths=0.5, linecolor="white",
-        annot_kws={"fontsize": annot_fontsize},
-        cbar_kws={"shrink": 0.8, "pad": 0.02},
+        linewidths=1, linecolor="white",
+        annot_kws={"fontsize": annot_fontsize, "color": "#48484A"},
+        cbar_kws={"shrink": 0.75, "pad": 0.02, "aspect": 30},
     )
 
 
 @_register(ChartType.GROUPED_BAR)
 def _grouped_bar(rec: ChartRecommendation, df: pd.DataFrame, ax: plt.Axes) -> None:
     cat_col, num_col = rec.columns[0], rec.columns[1]
-    grouped = df.groupby(cat_col)[num_col].mean().sort_values(ascending=False).head(15)
-    colors = [PALETTE[i % len(PALETTE)] for i in range(len(grouped))]
+    grouped = df.groupby(cat_col)[num_col].mean().sort_values(ascending=False).head(12)
 
-    bars = ax.bar(range(len(grouped)), grouped.values, color=colors, edgecolor="white", linewidth=0.6)
+    ax.barh(range(len(grouped)), grouped.values[::-1], color=PALETTE[0], edgecolor="white", linewidth=0.4, height=0.7)
 
-    for bar in bars:
-        height = bar.get_height()
-        ax.text(
-            bar.get_x() + bar.get_width() / 2, height,
-            f"{height:,.1f}", ha="center", va="bottom",
-            fontsize=9, fontweight="bold", color=CHROME,
-        )
-
-    ax.set_xticks(range(len(grouped)))
-    ax.set_xticklabels(grouped.index, rotation=45, ha="right")
-    ax.set_xlabel(cat_col)
-    ax.set_ylabel(f"Average {num_col}")
-    ax.grid(axis="y", alpha=0.25)
+    ax.set_yticks(range(len(grouped)))
+    ax.set_yticklabels(grouped.index[::-1], fontsize=10)
+    ax.set_xlabel(f"Avg {num_col}", fontsize=10, color=CHROME)
+    ax.grid(axis="x")
 
 
 @_register(ChartType.BOX)

@@ -22,15 +22,18 @@ except Exception:
     pass
 
 PALETTE = [
-    "#2563eb", "#7c3aed", "#0891b2", "#059669",
-    "#d97706", "#dc2626", "#4f46e5", "#0284c7",
+    "#0066FF", "#7C3AED", "#0891B2", "#059669",
+    "#D97706", "#DC2626", "#4F46E5", "#0284C7",
 ]
 REPORT_LAYOUT = dict(
-    font=dict(family="sans-serif", size=12, color="#495057"),
+    font=dict(family="-apple-system, 'Segoe UI', system-ui, sans-serif", size=12, color="#48484A"),
     paper_bgcolor="white",
     plot_bgcolor="white",
-    margin=dict(l=60, r=30, t=50, b=60),
-    title_font=dict(size=14, color="#1a1a2e"),
+    margin=dict(l=56, r=24, t=48, b=56),
+    title_font=dict(size=13, color="#1D1D1F"),
+    xaxis=dict(gridcolor="#F2F2F7", gridwidth=0.5, zeroline=False, showline=False),
+    yaxis=dict(gridcolor="#F2F2F7", gridwidth=0.5, zeroline=False, showline=False),
+    legend=dict(bgcolor="rgba(0,0,0,0)", borderwidth=0),
 )
 
 _GENERATORS: dict[ChartType, Callable] = {}
