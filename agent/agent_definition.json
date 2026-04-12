@@ -1,0 +1,44 @@
+{
+  "name": "data-autopilot-analyst",
+  "description": "Autonomous data analyst that profiles, cleans, visualizes, and reports on CSV datasets using the Data Autopilot API.",
+  "model": "claude-sonnet-4-6",
+  "instructions_file": "system_prompt.md",
+  "tools": [
+    {
+      "type": "computer_20250124",
+      "name": "computer",
+      "display_width_px": 1024,
+      "display_height_px": 768
+    },
+    {
+      "type": "bash_20250124",
+      "name": "bash"
+    },
+    {
+      "type": "text_editor_20250124",
+      "name": "text_editor"
+    }
+  ],
+  "environment": {
+    "type": "cloud",
+    "os": "linux",
+    "arch": "x86_64",
+    "packages": [
+      "python3",
+      "python3-pip",
+      "curl",
+      "jq"
+    ],
+    "setup_commands": [
+      "pip install requests pandas"
+    ],
+    "env_vars": {
+      "BACKEND_URL": "${DATA_AUTOPILOT_BACKEND_URL}"
+    }
+  },
+  "config": {
+    "max_turns": 20,
+    "max_tokens": 16384,
+    "timeout_minutes": 10
+  }
+}
