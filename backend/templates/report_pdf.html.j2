@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>{{ report.title }}</title>
+<style>
+  /* ═══════════════════════════════════════════════════════════════
+     PDF-optimized template for xhtml2pdf/reportlab
+     Uses only CSS features that xhtml2pdf reliably supports:
+     - Basic box model (margin, padding, border)
+     - Simple selectors (no :root, no CSS vars)
+     - Block layout (no grid, no flexbox, no columns)
+     - Standard font properties
+     ═══════════════════════════════════════════════════════════════ */
+
+  @page {
+    size: A4;
+    margin: 20mm 18mm 25mm 18mm;
+  }
+
+  body {
+    font-family: "Segoe UI", Helvetica, Arial, sans-serif;
+    font-size: 10pt;
+    line-height: 1.5;
+    color: #1A1A1A;
+  }
+
+  h1 {
+    font-size: 22pt;
+    font-weight: 600;
+    color: #000000;
+    margin: 0 0 6pt 0;
+  }
+
+  h2 {
+    font-size: 15pt;
+    font-weight: 600;
+    color: #000000;
+    margin: 24pt 0 8pt 0;
+    padding-top: 12pt;
+    border-top: 1px solid #CCCCCC;
+  }
+
+  p {
+    margin: 0 0 8pt 0;
+    color: #333333;
+  }
+
+  .meta {
+    font-size: 9pt;
+    color: #666666;
+    margin-bottom: 16pt;
+  }
+
+  /* ── Stat cards as simple table ── */
+  .stats-table {
+    width: 100%;
+    margin: 12pt 0;
+    border-collapse: collapse;
+  }
+
+  .stats-table td {
+    padding: 8pt 12pt 8pt 0;
+    border-top: 2pt solid #000000;
+    vertical-align: top;
+    width: 25%;
+  }
+
+  .stat-value {
+    font-size: 20pt;
+    font-weight: 300;
+    color: #000000;
+    line-height: 1.2;
+  }
+
+  .stat-label {
+    font-size: 8pt;
+    text-transform: uppercase;
+    letter-spacing: 1pt;
+    color: #666666;
+    margin-top: 4pt;
+  }
+
+  /* ── Findings ── */
+  .finding {
+    padding: 6pt 0;
+    border-bottom: 1px solid #EEEEEE;
+    font-size: 10pt;
+    color: #333333;
+  }
+
+  .finding-n {
+    font-weight: 700;
+    color: #999999;
+    margin-right: 6pt;
+  }
+
+  /* ── AI callout ── */
+  .ai-block {
+    background-color: #F8F9FA;
+    border-left: 3pt solid #0066FF;
+    padding: 10pt 14pt;
+    margin: 12pt 0;
+    font-size: 10pt;
+    color: #333333;
+  }
+
+  .ai-label {
+    font-size: 8pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5pt;
+    color: #0066FF;
+    margin-bottom: 4pt;
+  }
+
+  /* ── Alerts ── */
+  .alert-label {
+    font-size: 8pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5pt;
+    color: #666666;
+    margin: 12pt 0 4pt 0;
+  }
+
+  .alert {
+    padding: 4pt 10pt;
+    margin-bottom: 2pt;
+    font-size: 9pt;
+    border-left: 3pt solid #CCCCCC;
+  }
+
+  .alert-danger { border-left-color: #FF3B30; }
+  .alert-warning { border-left-color: #FF9500; }
+  .alert-info { border-left-color: #0066FF; }
+
+  /* ── Charts ── */
+  .chart-pair {
+    width: 100%;
+    margin: 8pt 0;
+  }
+
+  .chart-pair td {
+    width: 50%;
+    vertical-align: top;
+    padding: 4pt;
+  }
+
+  .chart-single {
+    width: 100%;
+    margin: 8pt 0;
+  }
+
+  .chart-img {
+    width: 100%;
+    height: auto;
+  }
+
+  .chart-title {
+    font-size: 9pt;
+    font-weight: 600;
+    color: #000000;
+    margin-top: 4pt;
+  }
+
+  .chart-desc {
+    font-size: 8pt;
+    color: #666666;
+    margin-top: 2pt;
+  }
+
+  .chart-insight {
+    background-color: #F8F9FA;
+    border-left: 2pt solid #4D94FF;
+    padding: 4pt 8pt;
+    margin-top: 4pt;
+    font-size: 8pt;
+    color: #333333;
+  }
+
+  /* ── Data tables ── */
+  table.data {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 9pt;
+    margin: 8pt 0;
+  }
+
+  table.data th {
+    text-align: left;
+    padding: 4pt 8pt;
+    font-size: 8pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5pt;
+    color: #666666;
+    border-bottom: 2pt solid #000000;
+  }
+
+  table.data td {
+    padding: 4pt 8pt;
+    border-bottom: 1px solid #EEEEEE;
+    color: #333333;
+    vertical-align: top;
+  }
+
+  /* ── Cleaning ── */
+  .shape-table {
+    width: 100%;
+    margin: 8pt 0;
+    border-collapse: collapse;
+  }
+
+  .shape-table td {
+    width: 50%;
+    padding: 8pt 0;
+    border-top: 2pt solid #000000;
+    vertical-align: top;
+  }
+
+  .shape-table td.after {
+    border-top-color: #34C759;
+  }
+
+  .step {
+    padding: 4pt 0;
+    border-bottom: 1px solid #EEEEEE;
+    font-size: 9pt;
+  }
+
+  .step-n {
+    font-weight: 700;
+    color: #999999;
+    margin-right: 6pt;
+  }
+
+  .step-name {
+    font-weight: 600;
+    color: #000000;
+    text-transform: capitalize;
+  }
+
+  .step-desc {
+    color: #666666;
+    font-size: 8pt;
+  }
+
+  /* ── Footer ── */
+  .footer {
+    margin-top: 24pt;
+    padding-top: 8pt;
+    border-top: 1px solid #CCCCCC;
+    font-size: 8pt;
+    color: #999999;
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<h1>{{ report.title }}</h1>
+<div class="meta">
+  {{ report.dataset_filename }} &middot;
+  {{ "{:,}".format(report.profile.total_rows) }} rows &middot;
+  {{ report.profile.total_columns }} columns &middot;
+  {{ report.generated_at }}
+</div>
+
+<hr style="border: none; border-top: 1px solid #CCCCCC; margin: 0 0 16pt 0;">
+
+
+<!-- EXECUTIVE SUMMARY -->
+<h2 style="border-top: none; padding-top: 0;">Executive Summary</h2>
+
+{% if report.executive_narrative %}
+<p>{{ report.executive_narrative }}</p>
+{% endif %}
+
+<table class="stats-table">
+  <tr>
+    <td>
+      <div class="stat-value">{{ "{:,}".format(report.profile.total_rows) }}</div>
+      <div class="stat-label">Rows</div>
+    </td>
+    <td>
+      <div class="stat-value">{{ report.profile.total_columns }}</div>
+      <div class="stat-label">Columns</div>
+    </td>
+    <td>
+      <div class="stat-value">{{ "{:,}".format(report.profile.duplicate_row_count) }}</div>
+      <div class="stat-label">Duplicates</div>
+    </td>
+    <td>
+      <div class="stat-value">{{ report.alerts | length }}</div>
+      <div class="stat-label">Alerts</div>
+    </td>
+  </tr>
+</table>
+
+{% if report.key_findings %}
+{% for finding in report.key_findings %}
+<div class="finding"><span class="finding-n">{{ loop.index }}.</span> {{ finding }}</div>
+{% endfor %}
+{% endif %}
+
+{% if report.ai_analysis and report.ai_analysis.executive_summary %}
+<div class="ai-block">
+  <div class="ai-label">AI Analysis</div>
+  {{ report.ai_analysis.executive_summary }}
+</div>
+{% endif %}
+
+
+<!-- DATA OVERVIEW -->
+<h2>Data Overview</h2>
+
+{% if report.data_overview_narrative %}
+<p>{{ report.data_overview_narrative }}</p>
+{% endif %}
+
+<table class="stats-table">
+  <tr>
+    {% set ns = namespace(numeric=0, categorical=0, datetime=0, text=0, boolean=0) %}
+    {% for col in report.profile.columns %}
+      {% if col.inferred_type | enum_val == 'numeric' %}{% set ns.numeric = ns.numeric + 1 %}
+      {% elif col.inferred_type | enum_val == 'categorical' %}{% set ns.categorical = ns.categorical + 1 %}
+      {% elif col.inferred_type | enum_val == 'datetime' %}{% set ns.datetime = ns.datetime + 1 %}
+      {% elif col.inferred_type | enum_val == 'text' %}{% set ns.text = ns.text + 1 %}
+      {% elif col.inferred_type | enum_val == 'boolean' %}{% set ns.boolean = ns.boolean + 1 %}
+      {% endif %}
+    {% endfor %}
+    {% if ns.numeric %}<td><div class="stat-value">{{ ns.numeric }}</div><div class="stat-label">Numeric</div></td>{% endif %}
+    {% if ns.categorical %}<td><div class="stat-value">{{ ns.categorical }}</div><div class="stat-label">Categorical</div></td>{% endif %}
+    {% if ns.datetime %}<td><div class="stat-value">{{ ns.datetime }}</div><div class="stat-label">Datetime</div></td>{% endif %}
+    {% if ns.text %}<td><div class="stat-value">{{ ns.text }}</div><div class="stat-label">Text</div></td>{% endif %}
+    {% if ns.boolean %}<td><div class="stat-value">{{ ns.boolean }}</div><div class="stat-label">Boolean</div></td>{% endif %}
+  </tr>
+</table>
+
+
+<!-- DATA QUALITY -->
+{% if report.alerts %}
+<h2>Data Quality</h2>
+<p>{{ report.alerts | length }} alert{{ 's' if report.alerts | length != 1 else '' }} detected.</p>
+
+{% set dangers = report.alerts | selectattr('severity', 'equalto', 'danger') | list %}
+{% set warnings = report.alerts | selectattr('severity', 'equalto', 'warning') | list %}
+{% set infos = report.alerts | selectattr('severity', 'equalto', 'info') | list %}
+
+{% if dangers %}
+<div class="alert-label">Critical ({{ dangers | length }})</div>
+{% for a in dangers %}<div class="alert alert-danger">{{ a.message }}</div>{% endfor %}
+{% endif %}
+
+{% if warnings %}
+<div class="alert-label">Warnings ({{ warnings | length }})</div>
+{% for a in warnings %}<div class="alert alert-warning">{{ a.message }}</div>{% endfor %}
+{% endif %}
+
+{% if infos %}
+<div class="alert-label">Info ({{ infos | length }})</div>
+{% for a in infos %}<div class="alert alert-info">{{ a.message }}</div>{% endfor %}
+{% endif %}
+{% endif %}
+
+
+<!-- CHART SECTIONS -->
+{% for section in report.sections %}
+<h2>{{ section.title }}</h2>
+
+{% if section.narrative %}
+<p><strong>{{ section.narrative.headline }}</strong>
+{% if section.narrative.body %} {{ section.narrative.body }}{% endif %}</p>
+{% endif %}
+
+{# Pair charts into 2-column table rows, full-width charts get their own row #}
+{% set full_types = ['heatmap', 'missing_matrix', 'treemap', 'sunburst', 'sankey', 'parallel_coords', 'pca_biplot', 'cluster_scatter', 'anomaly_scatter'] %}
+{% set ns_chart = namespace(queue=[]) %}
+
+{% for chart in section.charts %}
+  {% set is_full = chart.chart_type | enum_val in full_types %}
+
+  {% if is_full %}
+    {# Flush any queued half-width chart first #}
+    {% if ns_chart.queue %}
+    <table class="chart-pair"><tr>
+      {% for q in ns_chart.queue %}
+      <td>
+        <img class="chart-img" src="data:image/png;base64,{{ q.image_base64 }}" alt="{{ q.title }}">
+        <div class="chart-title">{{ q.title }}</div>
+        {% set ai_t = ai_insight_for(q.title, report.ai_analysis) %}
+        {% if ai_t %}<div class="chart-insight">{{ ai_t }}</div>
+        {% elif q.description %}<div class="chart-desc">{{ q.description }}</div>{% endif %}
+      </td>
+      {% endfor %}
+      <td></td>
+    </tr></table>
+    {% set ns_chart.queue = [] %}
+    {% endif %}
+
+    {# Full-width chart #}
+    <div class="chart-single">
+      <img class="chart-img" src="data:image/png;base64,{{ chart.image_base64 }}" alt="{{ chart.title }}">
+      <div class="chart-title">{{ chart.title }}</div>
+      {% set ai_text = ai_insight_for(chart.title, report.ai_analysis) %}
+      {% if ai_text %}<div class="chart-insight">{{ ai_text }}</div>
+      {% elif chart.description %}<div class="chart-desc">{{ chart.description }}</div>{% endif %}
+    </div>
+
+  {% else %}
+    {# Queue half-width charts and flush in pairs #}
+    {% set ns_chart.queue = ns_chart.queue + [chart] %}
+
+    {% if ns_chart.queue | length == 2 %}
+    <table class="chart-pair"><tr>
+      {% for q in ns_chart.queue %}
+      <td>
+        <img class="chart-img" src="data:image/png;base64,{{ q.image_base64 }}" alt="{{ q.title }}">
+        <div class="chart-title">{{ q.title }}</div>
+        {% set ai_t = ai_insight_for(q.title, report.ai_analysis) %}
+        {% if ai_t %}<div class="chart-insight">{{ ai_t }}</div>
+        {% elif q.description %}<div class="chart-desc">{{ q.description }}</div>{% endif %}
+      </td>
+      {% endfor %}
+    </tr></table>
+    {% set ns_chart.queue = [] %}
+    {% endif %}
+  {% endif %}
+{% endfor %}
+
+{# Flush remaining queued chart #}
+{% if ns_chart.queue %}
+<table class="chart-pair"><tr>
+  {% for q in ns_chart.queue %}
+  <td>
+    <img class="chart-img" src="data:image/png;base64,{{ q.image_base64 }}" alt="{{ q.title }}">
+    <div class="chart-title">{{ q.title }}</div>
+    {% set ai_t = ai_insight_for(q.title, report.ai_analysis) %}
+    {% if ai_t %}<div class="chart-insight">{{ ai_t }}</div>
+    {% elif q.description %}<div class="chart-desc">{{ q.description }}</div>{% endif %}
+  </td>
+  {% endfor %}
+  {% if ns_chart.queue | length == 1 %}<td></td>{% endif %}
+</tr></table>
+{% set ns_chart.queue = [] %}
+{% endif %}
+
+{% endfor %}
+
+
+<!-- STATISTICAL TESTS -->
+{% if report.statistical_report and report.statistical_report.tests %}
+<h2>Statistical Tests</h2>
+<p>Results with p &lt; 0.05 indicate statistical significance.</p>
+
+{% if report.statistical_report.clusters or report.statistical_report.anomalies or report.statistical_report.pca %}
+<table class="stats-table">
+  <tr>
+    {% if report.statistical_report.clusters %}
+    <td><div class="stat-value">{{ report.statistical_report.clusters.optimal_k }}</div><div class="stat-label">Clusters</div></td>
+    {% endif %}
+    {% if report.statistical_report.anomalies %}
+    <td><div class="stat-value">{{ report.statistical_report.anomalies.n_anomalies }}</div><div class="stat-label">Anomalies</div></td>
+    {% endif %}
+    {% if report.statistical_report.pca %}
+    <td><div class="stat-value">{{ report.statistical_report.pca.n_components_95 }}</div><div class="stat-label">PCA (95%)</div></td>
+    {% endif %}
+  </tr>
+</table>
+{% endif %}
+
+<table class="data">
+  <thead>
+    <tr>
+      <th>Test</th>
+      <th>Column(s)</th>
+      <th>Statistic</th>
+      <th>p-value</th>
+      <th>Interpretation</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for test in report.statistical_report.tests %}
+    <tr>
+      <td><strong>{{ test.test_name }}</strong></td>
+      <td>{{ test.columns | join(", ") }}</td>
+      <td>{{ "%.4f"|format(test.statistic) }}</td>
+      <td{% if test.p_value < 0.05 %} style="color: #0066FF; font-weight: 700"{% endif %}>{{ "%.6f"|format(test.p_value) }}</td>
+      <td>{{ test.interpretation }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+
+<!-- CLEANING IMPACT -->
+{% if report.cleaning_report %}
+<h2>Cleaning Impact</h2>
+<p>{{ report.cleaning_report.steps | length }} steps applied in {{ "{:,}".format(report.cleaning_report.duration_ms) }}ms.</p>
+
+<table class="shape-table">
+  <tr>
+    <td>
+      <div class="stat-label">Before</div>
+      <div class="stat-value" style="font-size: 14pt;">
+        {{ "{:,}".format(report.cleaning_report.original_shape[0]) }} rows &times;
+        {{ report.cleaning_report.original_shape[1] }} cols
+      </div>
+    </td>
+    <td class="after">
+      <div class="stat-label">After</div>
+      <div class="stat-value" style="font-size: 14pt;">
+        {{ "{:,}".format(report.cleaning_report.cleaned_shape[0]) }} rows &times;
+        {{ report.cleaning_report.cleaned_shape[1] }} cols
+      </div>
+    </td>
+  </tr>
+</table>
+
+{% for step in report.cleaning_report.steps %}
+<div class="step">
+  <span class="step-n">{{ loop.index }}.</span>
+  <span class="step-name">{{ step.step | replace("_", " ") }}</span>
+  &mdash; <span class="step-desc">{{ step.description }}</span>
+  {% if step.rows_affected > 0 %}
+  <span class="step-desc">({{ "{:,}".format(step.rows_affected) }} rows)</span>
+  {% endif %}
+</div>
+{% endfor %}
+{% endif %}
+
+
+<!-- RECOMMENDATIONS -->
+{% if report.ai_analysis and report.ai_analysis.recommendations %}
+<h2>Recommendations</h2>
+<div class="ai-block">
+  <div class="ai-label">AI Recommendations</div>
+  {{ report.ai_analysis.recommendations }}
+</div>
+{% endif %}
+
+
+<!-- APPENDIX -->
+<h2>Column Profiles</h2>
+
+<table class="data">
+  <thead>
+    <tr>
+      <th>Column</th>
+      <th>Type</th>
+      <th>Nulls</th>
+      <th>Null %</th>
+      <th>Unique</th>
+      <th>Samples</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for col in report.profile.columns %}
+    <tr>
+      <td><strong>{{ col.name }}</strong></td>
+      <td>{{ col.inferred_type | enum_val }}</td>
+      <td>{{ "{:,}".format(col.null_count) }}</td>
+      <td>{{ "%.1f"|format(col.null_pct) }}%</td>
+      <td>{{ "{:,}".format(col.unique_count) }}</td>
+      <td style="color: #999999; font-size: 8pt;">{{ col.sample_values[:3] | join(", ") }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+
+<div class="footer">
+  Generated by <strong>Data Autopilot</strong>
+</div>
+
+</body>
+</html>
